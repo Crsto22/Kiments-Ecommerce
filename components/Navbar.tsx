@@ -18,6 +18,7 @@ import {
 const navItems = [
   { label: "INICIO", href: "/" },
   { label: "CATEGORIAS", href: "/categorias" },
+  { label: "NOSOTROS", href: "/nosotros" },
 ];
 
 export function Navbar() {
