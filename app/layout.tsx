@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
+import { PageLoader } from "@/components/PageLoader";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       className={`${poppins.variable} ${kiments.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#111318] text-white">
+        <PageLoader />
         <Navbar />
         {children}
         <Footer />

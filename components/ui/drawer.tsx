@@ -50,7 +50,6 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
-  style,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
   return (
@@ -67,12 +66,6 @@ function DrawerContent({
           className,
         )}
         {...props}
-        style={
-          {
-            ...style,
-            "--initial-transform": "0px",
-          } as React.CSSProperties
-        }
       >
         {children}
       </DrawerPrimitive.Content>

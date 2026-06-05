@@ -18,6 +18,127 @@ body {
   font-family: var(--font-poppins), Arial, Helvetica, sans-serif;
 }
 
-[data-vaul-drawer][data-state="open"][data-vaul-drawer-direction="right"] {
-  transform: translate3d(0, 0, 0) !important;
+.kiments-loader-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kiments-loader-mark span {
+  width: 9px;
+  height: 34px;
+  border-radius: 999px;
+  background: #181516;
+  animation: kiments-loader-pulse 720ms ease-in-out infinite;
+}
+
+.kiments-loader-mark span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.kiments-loader-mark span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes kiments-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.55);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.checkout-ticket {
+  position: relative;
+}
+
+.checkout-ticket::after {
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  left: 0;
+  height: 10px;
+  content: "";
+  background:
+    linear-gradient(135deg, #ffffff 50%, transparent 50%) 0 0 / 14px 10px repeat-x,
+    linear-gradient(225deg, #ffffff 50%, transparent 50%) 7px 0 / 14px 10px repeat-x;
+}
+
+.product-viewer {
+  animation: product-viewer-fade-in 280ms ease both;
+}
+
+.product-viewer-closing {
+  animation: product-viewer-fade-out 280ms ease both;
+}
+
+.product-viewer-image {
+  width: var(--product-zoom-width, min(72vw, 720px));
+  height: var(--product-zoom-height, min(78vh, 860px));
+  animation: product-image-zoom-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: #ffffff;
+  transform-origin: center center;
+}
+
+.product-viewer-closing .product-viewer-image {
+  animation: product-image-zoom-out 300ms cubic-bezier(0.64, 0, 0.78, 0) both;
+}
+
+@keyframes product-viewer-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes product-viewer-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes product-image-zoom-in {
+  from {
+    opacity: 0.92;
+    transform: translate3d(
+        var(--product-zoom-x, 0),
+        var(--product-zoom-y, 0),
+        0
+      )
+      scale(var(--product-zoom-scale, 0.62));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes product-image-zoom-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0.92;
+    transform: translate3d(
+        var(--product-zoom-x, 0),
+        var(--product-zoom-y, 0),
+        0
+      )
+      scale(var(--product-zoom-scale, 0.62));
+  }
 }

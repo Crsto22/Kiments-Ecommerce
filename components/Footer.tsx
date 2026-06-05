@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   EnvelopeSimple,
   FacebookLogo,
@@ -6,7 +9,7 @@ import {
   MapPin,
   Phone,
   TiktokLogo,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@phosphor-icons/react";
 
 const frequentLinks = [
   { label: "Sobre Nosotros", href: "/sobre-nosotros" },
@@ -37,6 +40,12 @@ const contactItems = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (pathname === "/pago") {
+    return null;
+  }
+
   return (
     <footer className="bg-[#3c3c3b] px-7 pb-8 pt-12 text-white sm:px-10 lg:px-16 xl:px-20">
       <div className="mx-auto max-w-7xl">
