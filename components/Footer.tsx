@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 
 const frequentLinks = [
-  { label: "Sobre Nosotros", href: "/sobre-nosotros" },
+  { label: "Sobre Nosotros", href: "/nosotros" },
   { label: "Preguntas Frecuentes", href: "/preguntas-frecuentes" },
   { label: "Terminos y Condiciones", href: "/terminos-y-condiciones" },
   { label: "Libro de Reclamaciones (Peru)", href: "/libro-de-reclamaciones" },

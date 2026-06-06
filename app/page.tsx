@@ -108,7 +108,7 @@ export default function Home() {
           <div className="mt-8 flex justify-center">
             <Link
               href="/categorias"
-              className="inline-flex h-10 min-w-28 items-center justify-center rounded-full bg-[#3d3d3d] px-8 text-[11px] font-semibold uppercase tracking-[0.04em] text-white transition-colors hover:bg-black"
+              className="inline-flex h-10 min-w-28 items-center justify-center   bg-[#3d3d3d] px-8 text-[11px] font-semibold uppercase tracking-[0.04em] text-white transition-colors hover:bg-black"
             >
               Ver mas
             </Link>
