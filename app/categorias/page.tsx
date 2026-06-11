@@ -3,12 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   CaretUp,
   Columns,
   Eye,
   GridFour,
   Rows,
   ShoppingCartSimple,
+  SlidersHorizontal,
+  X,
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 
@@ -86,67 +98,112 @@ export default function CategoriasPage() {
         ? "lg:grid-cols-4"
         : "lg:grid-cols-3";
 
+  const filtersContent = (
+    <>
+      <FilterGroup title="Tipo de producto">
+        {productTypes.map((type) => (
+          <label key={type} className="flex items-center gap-3 text-sm font-light">
+            <input
+              type="checkbox"
+              checked={selectedTypes.includes(type)}
+              onChange={() => toggleType(type)}
+              className="size-4 accent-black"
+            />
+            <span>{type}</span>
+          </label>
+        ))}
+      </FilterGroup>
+
+      <FilterGroup title="Talla">
+        {sizes.map((size) => (
+          <label key={size} className="flex items-center gap-3 text-sm font-light">
+            <input
+              type="checkbox"
+              checked={selectedSizes.includes(size)}
+              onChange={() => toggleSize(size)}
+              className="size-4 accent-black"
+            />
+            <span>{size}</span>
+          </label>
+        ))}
+      </FilterGroup>
+
+      <FilterGroup title="Precio">
+        <div className="px-1">
+          <input
+            type="range"
+            min="0"
+            max="1890"
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(Number(event.target.value))}
+            className="w-full accent-black"
+          />
+          <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-light">
+            <div className="flex h-10 items-center justify-between bg-white px-3">
+              <span>S/</span>
+              <span>0</span>
+            </div>
+            <div className="flex h-10 items-center justify-between bg-white px-3">
+              <span>S/</span>
+              <span>{maxPrice.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </FilterGroup>
+    </>
+  );
+
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#252525] sm:px-10 lg:px-16 xl:px-24">
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[240px_1fr]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
           <h1 className="text-3xl font-light">Filtrar por</h1>
-
-          <FilterGroup title="Tipo de producto">
-            {productTypes.map((type) => (
-              <label key={type} className="flex items-center gap-3 text-sm font-light">
-                <input
-                  type="checkbox"
-                  checked={selectedTypes.includes(type)}
-                  onChange={() => toggleType(type)}
-                  className="size-4 accent-black"
-                />
-                <span>{type}</span>
-              </label>
-            ))}
-          </FilterGroup>
-
-          <FilterGroup title="Talla">
-            {sizes.map((size) => (
-              <label key={size} className="flex items-center gap-3 text-sm font-light">
-                <input
-                  type="checkbox"
-                  checked={selectedSizes.includes(size)}
-                  onChange={() => toggleSize(size)}
-                  className="size-4 accent-black"
-                />
-                <span>{size}</span>
-              </label>
-            ))}
-          </FilterGroup>
-
-          <FilterGroup title="Precio">
-            <div className="px-1">
-              <input
-                type="range"
-                min="0"
-                max="1890"
-                value={maxPrice}
-                onChange={(event) => setMaxPrice(Number(event.target.value))}
-                className="w-full accent-black"
-              />
-              <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-light">
-                <div className="flex h-10 items-center justify-between bg-white px-3">
-                  <span>S/</span>
-                  <span>0</span>
-                </div>
-                <div className="flex h-10 items-center justify-between bg-white px-3">
-                  <span>S/</span>
-                  <span>{maxPrice.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </FilterGroup>
+          {filtersContent}
         </aside>
 
         <section>
-          <div className="mb-14 flex items-center justify-between">
-            <p className="text-sm font-light">Caracteristicas</p>
+          <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center lg:mb-14">
+            <div className="flex items-center gap-4">
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Filtros"
+                    className="flex h-10 items-center gap-2 rounded-md border border-black/15 bg-white px-4 text-sm font-light transition-colors hover:border-black lg:hidden"
+                  >
+                    <SlidersHorizontal size={16} />
+                    Filtrar
+                  </button>
+                </DrawerTrigger>
+                <DrawerContent className="bg-[#f7f1f3]">
+                  <DrawerHeader className="border-b border-black/10 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <DrawerTitle className="text-xl font-light">Filtros</DrawerTitle>
+                      <DrawerClose asChild>
+                        <button aria-label="Cerrar filtros">
+                          <X size={24} weight="thin" />
+                        </button>
+                      </DrawerClose>
+                    </div>
+                    <DrawerDescription className="sr-only">
+                      Filtra los productos por tipo, talla y precio
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {filtersContent}
+                  </div>
+                  <DrawerFooter className="border-t border-black/10 p-4">
+                    <DrawerClose asChild>
+                      <button className="h-12 w-full bg-black text-sm font-light uppercase tracking-widest text-white transition-colors hover:bg-black/80">
+                        Aplicar filtros
+                      </button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+
+              <p className="hidden text-sm font-light lg:block">Caracteristicas</p>
+            </div>
             <div className="hidden items-center gap-2 sm:flex">
               <ViewButton
                 active={viewMode === "compact"}
@@ -172,7 +229,7 @@ export default function CategoriasPage() {
             </div>
           </div>
 
-          <div className={`grid gap-x-20 gap-y-14 sm:grid-cols-2 ${gridColumns}`}>
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-20 sm:gap-y-14 sm:grid-cols-2 ${gridColumns}`}>
             {filteredProducts.map((product) => (
               <article key={product.name}>
                 <div className="group relative aspect-[3/4] overflow-hidden bg-white">
@@ -180,10 +237,15 @@ export default function CategoriasPage() {
                     src={product.image}
                     alt={product.name}
                     fill
-                    sizes="(min-width: 1280px) 24vw, (min-width: 768px) 34vw, 88vw"
+                    sizes="(min-width: 1280px) 24vw, (min-width: 768px) 34vw, 50vw"
                     className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-x-0 bottom-6 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <Link
+                    href="/producto"
+                    className="absolute inset-0 z-10"
+                    aria-label={`Ver ${product.name}`}
+                  />
+                  <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                     <Link
                       href="/producto"
                       aria-label="Ver producto"

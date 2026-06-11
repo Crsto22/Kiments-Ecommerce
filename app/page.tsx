@@ -26,6 +26,13 @@ const featuredProducts = [
     swatch: "#1f2230",
     position: "center",
   },
+  {
+    name: "CAMISA M/LARGA VIENA",
+    price: "S/. 149.90",
+    image: "/img/productos/Producto01.jpg",
+    swatch: "#e5e5e5",
+    position: "center",
+  },
 ];
 
 const bestSellerProducts = [
@@ -51,6 +58,13 @@ const bestSellerProducts = [
     swatch: "#10a524",
     position: "center",
   },
+  {
+    name: "BLUSA IMARA ACERO/NEGRO",
+    price: "S/. 249.00",
+    image: "/img/productos/Producto02.jpg",
+    swatch: "#000000",
+    position: "center",
+  },
 ];
 
 export default function Home() {
@@ -60,7 +74,7 @@ export default function Home() {
 
       <section className="bg-white px-7 py-12 text-[#242424] sm:px-10 lg:px-16 xl:px-20">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-10 sm:grid-cols-3 sm:gap-12 lg:gap-16">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4 lg:gap-10 xl:gap-12">
             {featuredProducts.map((product) => (
               <article key={product.swatch} className="min-w-0">
                 <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
@@ -68,11 +82,16 @@ export default function Home() {
                     src={product.image}
                     alt={product.name}
                     fill
-                    sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 86vw"
+                    sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 50vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     style={{ objectPosition: product.position }}
                   />
-                  <div className="absolute inset-x-0 bottom-5 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <Link
+                    href="/producto"
+                    className="absolute inset-0 z-10"
+                    aria-label={`Ver ${product.name}`}
+                  />
+                  <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                     <Link
                       href="/producto"
                       aria-label="Ver producto"
@@ -137,24 +156,29 @@ export default function Home() {
             Productos mas vendidos
           </h2>
 
-          <div className="mt-10 grid gap-10 sm:grid-cols-3 sm:gap-12 lg:gap-16">
-            {bestSellerProducts.map((product) => (
-              <article key={product.name} className="min-w-0">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4 lg:gap-10 xl:gap-12">
+            {bestSellerProducts.map((product, index) => (
+              <article key={`${product.name}-${index}`} className="min-w-0">
                 <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
-                    sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 86vw"
+                    sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 50vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     style={{ objectPosition: product.position }}
                   />
+                  <Link
+                    href="/producto"
+                    className="absolute inset-0 z-10"
+                    aria-label={`Ver ${product.name}`}
+                  />
                   {product.soldOut ? (
-                    <span className="absolute left-4 top-4 bg-black px-4 py-2 text-[11px] font-light uppercase tracking-[0.08em] text-white">
+                    <span className="absolute bottom-0 left-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
                       Agotado
                     </span>
                   ) : null}
-                  <div className="absolute inset-x-0 bottom-5 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                     <Link
                       href="/producto"
                       aria-label="Ver producto"

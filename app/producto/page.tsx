@@ -8,6 +8,8 @@ import {
   CaretUp,
   MagnifyingGlassPlus,
   X,
+  Eye,
+  ShoppingCartSimple,
 } from "@phosphor-icons/react";
 import {
   type CSSProperties,
@@ -36,7 +38,43 @@ const colors = [
   { name: "Naranja", value: "#fb7416" },
 ];
 
-const sizes = ["S", "M", "XL"];
+const sizes = [
+  { label: "S", inStock: true },
+  { label: "M", inStock: false },
+  { label: "L", inStock: true },
+  { label: "XL", inStock: true },
+];
+
+const relatedProducts = [
+  {
+    name: "BLUSA IMARA VERDE/NEGRO",
+    price: "S/. 249.00",
+    image: "/img/productos/Producto03.jpg",
+    swatch: "#10a524",
+    position: "center",
+  },
+  {
+    name: "CAMISA M/LARGA VIENA",
+    price: "S/. 149.90",
+    image: "/img/productos/Producto01.jpg",
+    swatch: "#6c6463",
+    position: "center",
+  },
+  {
+    name: "BLUSA IMARA ACERO/NEGRO",
+    price: "S/. 249.00",
+    image: "/img/productos/Producto02.jpg",
+    swatch: "#69747d",
+    position: "center",
+  },
+  {
+    name: "BLUSA IMARA IVORY/NEGRO",
+    price: "S/. 249.00",
+    image: "/img/productos/Producto01.jpg",
+    swatch: "#f4f1ea",
+    position: "center",
+  },
+];
 
 export default function ProductoPage() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -325,9 +363,15 @@ export default function ProductoPage() {
         </section>
 
         <section className="pt-2 lg:pl-10">
-          <p className="text-xs font-light uppercase tracking-[0.08em] text-black/70">
-            Kiments
-          </p>
+          <nav className="mb-6 flex items-center gap-2 text-[10px] font-light uppercase tracking-widest text-black/50">
+            <Link href="/" className="transition-colors hover:text-black">Inicio</Link>
+            <span>/</span>
+            <Link href="/categorias" className="transition-colors hover:text-black">Mujer</Link>
+            <span>/</span>
+            <Link href="/categorias" className="transition-colors hover:text-black">Blusas</Link>
+            <span>/</span>
+            <span className="text-black">Modelo Anguie</span>
+          </nav>
           <h1 className="mt-2 text-3xl font-semibold uppercase leading-tight">
             Modelo Anguie
           </h1>
@@ -367,16 +411,22 @@ export default function ProductoPage() {
             <div className="mt-3 flex gap-3">
               {sizes.map((size) => (
                 <button
-                  key={size}
+                  key={size.label}
                   type="button"
-                  onClick={() => setSelectedSize(size)}
-                  className={`flex size-12 items-center justify-center rounded-md border text-sm font-light transition-colors ${
-                    selectedSize === size
-                      ? "border-black bg-white text-black"
-                      : "border-black/15 bg-white/75 text-black hover:border-black/50"
+                  disabled={!size.inStock}
+                  onClick={() => setSelectedSize(size.label)}
+                  className={`relative flex size-12 overflow-hidden items-center justify-center rounded-md border text-sm font-light transition-colors ${
+                    !size.inStock
+                      ? "border-black/10 bg-gray-50 text-black/30 cursor-not-allowed"
+                      : selectedSize === size.label
+                        ? "border-black bg-white text-black"
+                        : "border-black/15 bg-white/75 text-black hover:border-black/50"
                   }`}
                 >
-                  {size}
+                  {size.label}
+                  {!size.inStock && (
+                    <span className="absolute inset-0 m-auto h-[1px] w-[150%] -rotate-45 bg-black/20" />
+                  )}
                 </button>
               ))}
             </div>
@@ -400,6 +450,62 @@ export default function ProductoPage() {
           </div>
         </section>
       </div>
+
+      <section className="mx-auto mt-24 max-w-7xl border-t border-black/10 pt-16">
+        <h2 className="text-center text-xl font-light uppercase tracking-[0.12em] sm:text-2xl">
+          También te podría interesar
+        </h2>
+
+        <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4 lg:gap-10 xl:gap-12">
+          {relatedProducts.map((product, index) => (
+            <article key={`${product.name}-${index}`} className="min-w-0">
+              <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ objectPosition: product.position }}
+                />
+                <Link
+                  href="/producto"
+                  className="absolute inset-0 z-10"
+                  aria-label={`Ver ${product.name}`}
+                />
+                <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <Link
+                    href="/producto"
+                    aria-label="Ver producto"
+                    className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
+                  >
+                    <Eye size={18} weight="regular" />
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Agregar al carrito"
+                    className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
+                  >
+                    <ShoppingCartSimple size={18} weight="regular" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <span
+                  aria-label="Color disponible"
+                  className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.45)]"
+                  style={{ backgroundColor: product.swatch }}
+                />
+                <h2 className="mt-3 text-[12px] font-normal uppercase leading-tight tracking-[0.02em]">
+                  {product.name}
+                </h2>
+                <p className="mt-1 text-[12px] leading-none">{product.price}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {isViewerMounted ? (
         <div
@@ -486,6 +592,18 @@ export default function ProductoPage() {
           </div>
         </div>
       ) : null}
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white px-5 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] lg:hidden">
+        <div className="flex items-center justify-between gap-6">
+          <div>
+            <p className="text-[11px] font-light uppercase tracking-widest text-black/60">Modelo Anguie</p>
+            <p className="text-sm font-semibold text-black mt-0.5">S/. 289.90</p>
+          </div>
+          <button className="flex h-[46px] flex-1 items-center justify-center rounded bg-black px-6 text-[13px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-black/80">
+            Añadir
+          </button>
+        </div>
+      </div>
     </main>
   );
 }

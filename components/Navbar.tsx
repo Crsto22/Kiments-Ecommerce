@@ -5,8 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
+  List,
   MagnifyingGlass,
   ShoppingCartSimple,
+  X,
 } from "@phosphor-icons/react/dist/ssr";
 import {
   Drawer,
@@ -141,17 +143,23 @@ export function Navbar() {
         </div>
       </div>
 
-      <nav className="relative mx-auto flex h-full max-w-7xl items-center justify-end px-5 sm:justify-between sm:px-10 lg:px-16 xl:px-20">
-        <div className="hidden h-full items-center gap-8 sm:flex sm:gap-12 xl:gap-16">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`text-[12px] font-light leading-none tracking-wide transition-colors lg:text-[14px] xl:text-[16px] ${navText}`}
-            >
-              {item.label}
-            </Link>
-          ))}
+      <nav className="relative mx-auto flex h-full max-w-7xl items-center justify-between px-5 sm:px-10 lg:px-16 xl:px-20">
+        <div className="flex h-full items-center">
+          <div className="hidden h-full items-center gap-8 sm:flex sm:gap-12 xl:gap-16">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`text-[12px] font-light leading-none tracking-wide transition-colors lg:text-[14px] xl:text-[16px] ${navText}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <MobileMenuDrawer
+            navItems={navItems}
+            triggerClassName={`flex items-center justify-center sm:hidden rounded-sm transition-colors ${iconText}`}
+          />
         </div>
 
         <Link
@@ -208,75 +216,186 @@ function CartDrawer({ triggerClassName }: Readonly<{ triggerClassName: string }>
           </DrawerDescription>
         </DrawerHeader>
 
-              <div className="flex flex-1 flex-col gap-5 px-6 py-6">
-                <article className="grid grid-cols-[82px_1fr] gap-4 border-b border-black/10 pb-5">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-[#f1ecee]">
-                    <Image
-                      src="/img/productos/Producto02.jpg"
-                      alt="Modelo Anguie"
-                      fill
-                      sizes="82px"
-                      className="object-cover object-center"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-sm font-light uppercase leading-tight">
-                          Modelo Anguie
-                        </h3>
-                        <p className="mt-2 text-[11px] font-light uppercase text-black/55">
-                          Color: Ivory
-                        </p>
-                        <p className="mt-1 text-[11px] font-light uppercase text-black/55">
-                          Talla: 10
-                        </p>
+              <div className="flex flex-1 flex-col px-6 py-6 sm:px-8">
+                <div className="flex-1 overflow-y-auto">
+                  <article className="grid grid-cols-[90px_1fr] gap-5 border-b border-black/5 pb-6">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border border-black/5">
+                      <Image
+                        src="/img/productos/Producto02.jpg"
+                        alt="Modelo Anguie"
+                        fill
+                        sizes="90px"
+                        className="object-cover object-center"
+                      />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-[13px] font-medium uppercase tracking-wide text-black">
+                            Modelo Anguie
+                          </h3>
+                          <p className="mt-1.5 text-[11px] font-light uppercase tracking-wider text-black/50">
+                            Color: Ivory
+                          </p>
+                          <p className="mt-0.5 text-[11px] font-light uppercase tracking-wider text-black/50">
+                            Talla: 10
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-[13px] font-medium">S/ 249.00</p>
                       </div>
-                      <p className="shrink-0 text-sm font-medium">S/ 249.00</p>
+                      
+                      <div className="mt-auto pt-4 flex items-center justify-between">
+                        <div className="inline-flex h-8 items-center rounded border border-gray-200 bg-white text-xs font-light shadow-sm">
+                          <button
+                            type="button"
+                            aria-label="Disminuir cantidad"
+                            className="flex size-8 items-center justify-center transition-colors hover:bg-gray-50 hover:text-black/70"
+                          >
+                            -
+                          </button>
+                          <span className="flex w-8 items-center justify-center font-medium">1</span>
+                          <button
+                            type="button"
+                            aria-label="Aumentar cantidad"
+                            className="flex size-8 items-center justify-center transition-colors hover:bg-gray-50 hover:text-black/70"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button type="button" className="text-[10px] uppercase tracking-widest text-black/40 hover:text-black underline-offset-4 hover:underline transition-colors">
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
-                    <div className="mt-5 inline-flex h-8 items-center bg-[#f3f1f1] text-xs font-light">
-                      <button
-                        type="button"
-                        aria-label="Disminuir cantidad"
-                        className="flex size-8 items-center justify-center"
-                      >
-                        -
-                      </button>
-                      <span className="flex w-8 items-center justify-center">1</span>
-                      <button
-                        type="button"
-                        aria-label="Aumentar cantidad"
-                        className="flex size-8 items-center justify-center"
-                      >
-                        +
-                      </button>
+                  </article>
+                </div>
+
+                <div className="mt-auto pt-6">
+                  <div className="flex items-center justify-between text-black">
+                    <span className="text-[13px] font-medium uppercase tracking-widest">
+                      Total
+                    </span>
+                    <div className="flex items-end gap-2">
+                      <span className="mb-0.5 text-[10px] text-black/50">PEN</span>
+                      <span className="text-xl font-semibold">S/ 249.00</span>
                     </div>
                   </div>
-                </article>
-
-                <div className="mt-auto flex items-center justify-between border-t border-black/10 pt-5">
-                  <span className="text-xs font-light uppercase tracking-[0.08em]">
-                    Total
-                  </span>
-                  <span className="text-base font-semibold">S/ 249.00 PEN</span>
+                  <p className="mt-2 text-[11px] font-light text-black/50">
+                    Los impuestos y gastos de envío se calculan en la pantalla de pago.
+                  </p>
                 </div>
               </div>
 
-        <DrawerFooter className="border-t border-black/10">
+        <DrawerFooter className="border-t border-black/10 bg-white p-6 sm:p-8 flex flex-col gap-4">
           <Link
             href="/pago"
-            className="flex h-12 items-center justify-center bg-black text-sm font-light uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#3d3d3d]"
+            className="flex h-[52px] w-full items-center justify-center bg-black text-[13px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-black/80"
           >
-            Ir a pagar
+            Ir a Pagar
           </Link>
           <DrawerClose asChild>
             <button
               type="button"
-              className="flex h-12 items-center justify-center border border-black/15 text-sm font-light uppercase tracking-[0.08em] text-black transition-colors hover:border-black"
+              className="mt-1 flex items-center justify-center text-[11px] font-light uppercase tracking-widest text-black/50 transition-all hover:text-black hover:underline underline-offset-4"
             >
               Seguir comprando
             </button>
           </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function MobileMenuDrawer({
+  navItems,
+  triggerClassName,
+}: Readonly<{
+  navItems: { label: string; href: string }[];
+  triggerClassName: string;
+}>) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Drawer direction="left" open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
+        <button
+          type="button"
+          aria-label="Abrir menú"
+          className={triggerClassName}
+        >
+          <List size={24} weight="thin" />
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="border-r-0 sm:max-w-none !w-[100vw] sm:!w-[420px] bg-white">
+        <DrawerHeader className="shrink-0 flex items-center justify-between px-8 py-6 text-left border-b border-black/10">
+          <DrawerTitle className="sr-only">Menú de Navegación</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Navega por las secciones de la tienda
+          </DrawerDescription>
+
+          <Link
+            href="/"
+            onClick={() => setIsOpen(false)}
+            className="flex flex-col items-start leading-none text-black"
+          >
+            <span className="font-[family-name:var(--font-kiments)] text-[22px] font-normal tracking-[0.14em]">
+              KIMENTS
+            </span>
+          </Link>
+
+          <DrawerClose asChild>
+            <button
+              type="button"
+              aria-label="Cerrar menú"
+              className="rounded-sm text-black transition-colors hover:text-black/70"
+            >
+              <X size={26} weight="thin" />
+            </button>
+          </DrawerClose>
+        </DrawerHeader>
+
+        <div className="flex flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-col gap-6 px-8 py-10 sm:px-12">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className="group w-fit py-2 text-[22px] font-light uppercase tracking-[0.15em] text-black transition-colors sm:text-2xl"
+              >
+                <span className="relative">
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 h-[1px] w-0 bg-black transition-all duration-300 group-hover:w-full" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <DrawerFooter className="shrink-0 border-t border-black/10 px-8 py-8 sm:px-12">
+          <div className="flex flex-col gap-4 text-[11px] font-light uppercase tracking-widest text-black/60">
+            <Link
+              href="/terminos-y-condiciones"
+              onClick={() => setIsOpen(false)}
+              className="transition-colors hover:text-black"
+            >
+              Términos y Condiciones
+            </Link>
+            <Link
+              href="/preguntas-frecuentes"
+              onClick={() => setIsOpen(false)}
+              className="transition-colors hover:text-black"
+            >
+              Preguntas Frecuentes
+            </Link>
+            <a
+              href="mailto:contacto@kiments.com"
+              className="transition-colors hover:text-black"
+            >
+              contacto@kiments.com
+            </a>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
