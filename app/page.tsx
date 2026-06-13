@@ -158,6 +158,19 @@ function ProductCard({ item }: Readonly<{ item: ProductoItem }>) {
       item.producto.imagenGlobalThumbUrl,
   );
 
+  const sizes = [...item.variantes]
+    .sort((a, b) => {
+      const na = Number(a.talla.nombre);
+      const nb = Number(b.talla.nombre);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.talla.nombre.localeCompare(b.talla.nombre);
+    })
+    .map((v) => ({
+      label: v.talla.nombre,
+      disponible: v.disponible,
+      stock: v.stock,
+    }));
+
   return (
     <article className="min-w-0">
       <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
@@ -220,6 +233,22 @@ function ProductCard({ item }: Readonly<{ item: ProductoItem }>) {
           {item.producto.nombre}
         </h2>
         <p className="mt-1 text-[12px] leading-none">{priceLabel}</p>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {sizes.map((size) => (
+            <span
+              key={size.label}
+              className={`inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[10px] font-light uppercase ${
+                size.disponible
+                  ? "border-black/20 text-black/70"
+                  : "border-black/5 text-black/25 line-through"
+              }`}
+              title={size.disponible ? `${size.stock} en stock` : "Agotado"}
+            >
+              {size.label}
+            </span>
+          ))}
+        </div>
       </div>
     </article>
   );
