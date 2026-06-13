@@ -69,7 +69,7 @@ export default function NosotrosPage() {
 
               <div className="mt-12">
                 <Link
-                  href="/categorias"
+                  href="/productos"
                   className="group inline-flex items-center gap-4 border-b border-black pb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-all hover:gap-6 hover:text-black/70"
                 >
                   Descubrir Colecciones
@@ -141,7 +141,7 @@ export default function NosotrosPage() {
           </p>
           <div className="mt-12">
             <Link
-              href="/categorias"
+              href="/productos"
               className="inline-flex h-[52px] items-center justify-center bg-white px-12 text-[11px] font-light uppercase tracking-[0.14em] text-black transition-colors hover:bg-[#e0e0e0]"
             >
               Ir a la tienda

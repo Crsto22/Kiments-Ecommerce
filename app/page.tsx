@@ -87,13 +87,13 @@ export default function Home() {
                     style={{ objectPosition: product.position }}
                   />
                   <Link
-                    href="/producto"
+                    href="/productos"
                     className="absolute inset-0 z-10"
                     aria-label={`Ver ${product.name}`}
                   />
                   <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                     <Link
-                      href="/producto"
+                      href="/productos"
                       aria-label="Ver producto"
                       className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
                     >
@@ -126,7 +126,7 @@ export default function Home() {
 
           <div className="mt-8 flex justify-center">
             <Link
-              href="/categorias"
+              href="/productos"
               className="inline-flex h-10 min-w-28 items-center justify-center   bg-[#3d3d3d] px-8 text-[11px] font-semibold uppercase tracking-[0.04em] text-white transition-colors hover:bg-black"
             >
               Ver mas
@@ -169,7 +169,7 @@ export default function Home() {
                     style={{ objectPosition: product.position }}
                   />
                   <Link
-                    href="/producto"
+                    href="/productos"
                     className="absolute inset-0 z-10"
                     aria-label={`Ver ${product.name}`}
                   />
@@ -180,7 +180,7 @@ export default function Home() {
                   ) : null}
                   <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                     <Link
-                      href="/producto"
+                      href="/productos"
                       aria-label="Ver producto"
                       className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
                     >

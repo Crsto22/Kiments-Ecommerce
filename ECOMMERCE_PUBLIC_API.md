@@ -209,18 +209,12 @@ Si no existe sucursal ecommerce activa, el listado no falla. Devuelve catalogo v
 
 ## GET /api/public/ecommerce/productos/{slug}
 
-Muestra el detalle de un producto usando su slug publico. Si no se envia `idColor`, el backend selecciona el primer color del producto, priorizando colores con stock.
+Muestra el detalle completo de un producto usando su slug publico. Devuelve todos los colores, todas las tallas, todas las imagenes, precios y ofertas del producto, sin filtrar por stock.
 
 ### Ejemplo Request
 
 ```http
-GET /api/public/ecommerce/productos/blazer-ejecutivo
-```
-
-### Ejemplo Request Con Color
-
-```http
-GET /api/public/ecommerce/productos/blazer-ejecutivo?idColor=8
+GET /api/public/ecommerce/productos/michell
 ```
 
 ### Ejemplo Response
@@ -230,119 +224,114 @@ GET /api/public/ecommerce/productos/blazer-ejecutivo?idColor=8
   "tiendaConfigurada": true,
   "producto": {
     "idProducto": 45,
-    "nombre": "Blazer Ejecutivo",
-    "slug": "blazer-ejecutivo",
-    "descripcion": "Blazer para dama con corte moderno",
+    "nombre": "Michell",
+    "slug": "michell",
+    "descripcion": "Vestido Michell corte moderno",
     "estado": "ACTIVO",
     "fechaCreacion": "2026-06-10T15:25:40",
-    "categoria": {
-      "idCategoria": 3,
-      "nombre": "Blazers"
-    },
-    "imagenGlobalUrl": "/storage/productos/global/blazer-ejecutivo.jpg",
-    "imagenGlobalThumbUrl": "/storage/productos/global/thumb_blazer-ejecutivo.jpg"
+    "categoria": { "idCategoria": 3, "nombre": "Vestidos" },
+    "imagenGlobalUrl": "/storage/productos/global/michell.jpg",
+    "imagenGlobalThumbUrl": "/storage/productos/global/thumb_michell.jpg"
   },
-  "color": {
-    "idColor": 8,
-    "nombre": "Vino",
-    "hex": "#7A1E35"
-  },
-  "imagenPrincipal": {
-    "idColorImagen": 120,
-    "url": "/storage/productos/45/vino/blazer-vino.jpg",
-    "urlThumb": "/storage/productos/45/vino/thumb_blazer-vino.jpg",
-    "orden": 1,
-    "esPrincipal": true,
-    "estado": "ACTIVO",
-    "origen": "COLOR"
-  },
-  "imagenes": [
+  "colores": [
     {
-      "idColorImagen": 120,
-      "url": "/storage/productos/45/vino/blazer-vino.jpg",
-      "urlThumb": "/storage/productos/45/vino/thumb_blazer-vino.jpg",
-      "orden": 1,
-      "esPrincipal": true,
-      "estado": "ACTIVO",
-      "origen": "COLOR"
-    },
-    {
-      "idColorImagen": 121,
-      "url": "/storage/productos/45/vino/blazer-vino-lateral.jpg",
-      "urlThumb": "/storage/productos/45/vino/thumb_blazer-vino-lateral.jpg",
-      "orden": 2,
-      "esPrincipal": false,
-      "estado": "ACTIVO",
-      "origen": "COLOR"
-    }
-  ],
-  "precioMinimo": 79.0,
-  "precioMaximo": 99.0,
-  "estadoStock": "PARCIAL",
-  "stockTotalColor": 4,
-  "variantes": [
-    {
-      "idProductoVariante": 301,
-      "sku": "BLA-VIN-S",
-      "codigoBarras": "7750000000301",
-      "talla": {
-        "idTalla": 1,
-        "nombre": "S"
-      },
-      "precioRegular": 99.0,
-      "precioMayor": 85.0,
-      "precioOfertaAplicada": 79.0,
-      "precioVigente": 79.0,
-      "tipoOfertaAplicada": "SUCURSAL",
-      "sucursalOfertaId": 15,
-      "ofertaInicio": "2026-06-01T00:00:00",
-      "ofertaFin": "2026-06-30T23:59:59",
-      "stock": 2,
-      "disponible": true,
-      "estado": "ACTIVO"
-    },
-    {
-      "idProductoVariante": 302,
-      "sku": "BLA-VIN-M",
-      "codigoBarras": "7750000000302",
-      "talla": {
-        "idTalla": 2,
-        "nombre": "M"
-      },
-      "precioRegular": 99.0,
-      "precioMayor": 85.0,
-      "precioOfertaAplicada": null,
-      "precioVigente": 99.0,
-      "tipoOfertaAplicada": "NINGUNA",
-      "sucursalOfertaId": null,
-      "ofertaInicio": null,
-      "ofertaFin": null,
-      "stock": 0,
-      "disponible": false,
-      "estado": "ACTIVO"
-    }
-  ],
-  "otrosColores": [
-    {
-      "color": {
-        "idColor": 9,
-        "nombre": "Blanco",
-        "hex": "#FFFFFF"
-      },
+      "color": { "idColor": 8, "nombre": "Vino", "hex": "#7A1E35" },
       "imagenPrincipal": {
-        "idColorImagen": null,
-        "url": "/storage/productos/global/blazer-ejecutivo.jpg",
-        "urlThumb": "/storage/productos/global/thumb_blazer-ejecutivo.jpg",
-        "orden": null,
+        "idColorImagen": 120,
+        "url": "/storage/productos/45/vino/michell-vino.jpg",
+        "urlThumb": "/storage/productos/45/vino/thumb_michell-vino.jpg",
+        "orden": 1,
         "esPrincipal": true,
         "estado": "ACTIVO",
-        "origen": "GLOBAL"
+        "origen": "COLOR"
       },
+      "imagenes": [
+        {
+          "idColorImagen": 120,
+          "url": "/storage/productos/45/vino/michell-vino.jpg",
+          "urlThumb": "/storage/productos/45/vino/thumb_michell-vino.jpg",
+          "orden": 1, "esPrincipal": true, "estado": "ACTIVO", "origen": "COLOR"
+        },
+        {
+          "idColorImagen": 121,
+          "url": "/storage/productos/45/vino/michell-vino-lateral.jpg",
+          "urlThumb": "/storage/productos/45/vino/thumb_michell-vino-lateral.jpg",
+          "orden": 2, "esPrincipal": false, "estado": "ACTIVO", "origen": "COLOR"
+        }
+      ],
+      "precioMinimo": 79.0,
+      "precioMaximo": 99.0,
+      "estadoStock": "PARCIAL",
+      "stockTotalColor": 4,
+      "variantes": [
+        {
+          "idProductoVariante": 301,
+          "sku": "MIC-VIN-S",
+          "codigoBarras": "7750000000301",
+          "talla": { "idTalla": 1, "nombre": "S" },
+          "precioRegular": 99.0,
+          "precioMayor": 85.0,
+          "precioOfertaAplicada": 79.0,
+          "precioVigente": 79.0,
+          "tipoOfertaAplicada": "SUCURSAL",
+          "sucursalOfertaId": 15,
+          "ofertaInicio": "2026-06-01T00:00:00",
+          "ofertaFin": "2026-06-30T23:59:59",
+          "stock": 2,
+          "disponible": true,
+          "estado": "ACTIVO"
+        },
+        {
+          "idProductoVariante": 302,
+          "sku": "MIC-VIN-M",
+          "codigoBarras": "7750000000302",
+          "talla": { "idTalla": 2, "nombre": "M" },
+          "precioRegular": 99.0,
+          "precioMayor": 85.0,
+          "precioOfertaAplicada": null,
+          "precioVigente": 99.0,
+          "tipoOfertaAplicada": "NINGUNA",
+          "sucursalOfertaId": null,
+          "ofertaInicio": null,
+          "ofertaFin": null,
+          "stock": 2,
+          "disponible": true,
+          "estado": "ACTIVO"
+        }
+      ]
+    },
+    {
+      "color": { "idColor": 9, "nombre": "Blanco", "hex": "#FFFFFF" },
+      "imagenPrincipal": {
+        "idColorImagen": null,
+        "url": "/storage/productos/global/michell.jpg",
+        "urlThumb": "/storage/productos/global/thumb_michell.jpg",
+        "orden": null, "esPrincipal": true, "estado": "ACTIVO", "origen": "GLOBAL"
+      },
+      "imagenes": [],
       "precioMinimo": 99.0,
       "precioMaximo": 99.0,
       "estadoStock": "AGOTADO",
       "stockTotalColor": 0,
-      "disponible": false
+      "variantes": [
+        {
+          "idProductoVariante": 303,
+          "sku": "MIC-BLA-S",
+          "codigoBarras": "7750000000303",
+          "talla": { "idTalla": 1, "nombre": "S" },
+          "precioRegular": 99.0,
+          "precioMayor": 85.0,
+          "precioOfertaAplicada": null,
+          "precioVigente": 99.0,
+          "tipoOfertaAplicada": "NINGUNA",
+          "sucursalOfertaId": null,
+          "ofertaInicio": null,
+          "ofertaFin": null,
+          "stock": 0,
+          "disponible": false,
+          "estado": "ACTIVO"
+        }
+      ]
     }
   ]
 }
@@ -355,31 +344,21 @@ HTTP/1.1 409 Conflict
 ```
 
 ```json
-{
-  "message": "Tienda ecommerce no configurada",
-  "code": "TIENDA_NO_CONFIGURADA"
-}
+{ "message": "Tienda ecommerce no configurada", "code": "TIENDA_NO_CONFIGURADA" }
 ```
 
 ### Error Producto No Encontrado
 
-Aplica cuando:
-
-- El producto no existe.
-- El producto no esta publicado en ecommerce.
-- El color no pertenece al producto.
-- El producto/color esta eliminado o inactivo.
+Aplica cuando el slug no existe, el producto no esta publicado en ecommerce, o el producto esta eliminado/inactivo.
 
 ```http
 HTTP/1.1 404 Not Found
 ```
 
 ```json
-{
-  "message": "Producto no encontrado",
-  "code": "Producto no encontrado"
-}
+{ "message": "Producto no encontrado", "code": "Producto no encontrado" }
 ```
+
 
 ## Uso Recomendado En Frontend Ecommerce
 
@@ -390,15 +369,10 @@ HTTP/1.1 404 Not Found
    - Si `precioMinimo == precioMaximo`, mostrar un solo precio.
    - Si son diferentes, mostrar rango: `S/ precioMinimo - S/ precioMaximo`.
 5. Si `estadoStock = AGOTADO`, mostrar el producto como catalogo sin boton de compra.
-6. Al entrar al detalle, usar `producto.slug`.
-7. Para seleccionar talla, usar el item de `variantes`.
+6. Al entrar al detalle, usar `GET /api/public/ecommerce/productos/{slug}` con el slug del producto.
+7. Para seleccionar talla, usar el item de `variantes` dentro del color elegido.
 8. Para comprar o reservar, enviar `idProductoVariante` al flujo futuro de pedido.
 
-El endpoint antiguo por ID queda disponible temporalmente para compatibilidad:
-
-```http
-GET /api/public/ecommerce/productos/45/colores/8
-```
 
 ## Consultas SQL De Validacion
 

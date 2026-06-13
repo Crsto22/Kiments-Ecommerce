@@ -82,7 +82,7 @@ export function HeroCarousel() {
                   {slide.title}
                 </h1>
                 <Link
-                  href="/categorias"
+                  href="/productos"
                   className={`mt-8 inline-flex h-12 items-center justify-center border border-white px-9 text-sm font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-black sm:h-14 sm:px-11 sm:text-base ${
                     isRightAligned ? "ml-auto" : ""
                   }`}

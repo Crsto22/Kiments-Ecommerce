@@ -68,13 +68,12 @@ export async function fetchProductos(
 
 export async function fetchProductoBySlug(
   slug: string,
-  idColor?: number,
 ): Promise<ProductoDetalleResponse> {
-  const qs = idColor !== undefined ? `?idColor=${idColor}` : "";
   return apiFetch<ProductoDetalleResponse>(
-    `/api/public/ecommerce/productos/${encodeURIComponent(slug)}${qs}`,
+    `/api/public/ecommerce/productos/${encodeURIComponent(slug)}`,
   );
 }
+
 
 export function buildImageUrl(relativePath: string | null | undefined): string | null {
   if (!relativePath) return null;

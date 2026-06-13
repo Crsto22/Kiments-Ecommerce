@@ -137,7 +137,7 @@ export default function TerminosYCondicionesPage() {
             CONTINUAR EXPLORANDO
           </h2>
           <Link
-            href="/categorias"
+            href="/productos"
             className="group mt-10 inline-flex h-[52px] items-center justify-center bg-white px-12 text-[11px] font-light uppercase tracking-[0.14em] text-black transition-colors hover:bg-[#e0e0e0]"
           >
             Ir a la tienda

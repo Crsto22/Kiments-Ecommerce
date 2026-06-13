@@ -459,7 +459,7 @@ export default function PagoPage() {
           {/* Breadcrumb + Timer (same row) */}
           <div className="mb-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-[13px] text-black/60 shrink-0">
-              <Link href="/categorias" className="transition-colors hover:text-black">Carrito</Link>
+              <Link href="/productos" className="transition-colors hover:text-black">Carrito</Link>
               <CaretRight size={10} weight="bold" />
               <span className="font-medium text-black">
                 {step === 1 ? "Información" : "Pago"}

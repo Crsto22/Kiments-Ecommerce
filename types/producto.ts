@@ -92,19 +92,7 @@ export interface ProductoListParams {
 
 // --- Detalle de producto (GET /productos/{slug}) ---
 
-export interface OtroColorItem {
-  color: Color;
-  imagenPrincipal: ImagenProducto | null;
-  precioMinimo: number;
-  precioMaximo: number;
-  estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
-  stockTotalColor: number;
-  disponible: boolean;
-}
-
-export interface ProductoDetalleResponse {
-  tiendaConfigurada: boolean;
-  producto: ProductoInfo;
+export interface ColorDetalle {
   color: Color;
   imagenPrincipal: ImagenProducto | null;
   imagenes: ImagenProducto[];
@@ -113,5 +101,11 @@ export interface ProductoDetalleResponse {
   estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
   stockTotalColor: number;
   variantes: VarianteProducto[];
-  otrosColores: OtroColorItem[];
 }
+
+export interface ProductoDetalleResponse {
+  tiendaConfigurada: boolean;
+  producto: ProductoInfo;
+  colores: ColorDetalle[];
+}
+

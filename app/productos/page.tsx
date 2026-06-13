@@ -99,7 +99,7 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
   };
 }
 
-export default function CategoriasPage() {
+export default function ProductosPage() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(2000);
@@ -421,13 +421,13 @@ export default function CategoriasPage() {
                         <BrandPlaceholder />
                       )}
                       <Link
-                        href={`/producto/${product.slug}`}
+                        href={`/productos/${product.slug}`}
                         className="absolute inset-0 z-10"
                         aria-label={`Ver ${product.name}`}
                       />
                       <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Link
-                          href={`/producto/${product.slug}`}
+                          href={`/productos/${product.slug}`}
                           aria-label="Ver producto"
                           className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
                         >
@@ -454,7 +454,7 @@ export default function CategoriasPage() {
                     </div>
 
                     <div className="mt-4">
-                      <Link href={`/producto/${product.slug}`}>
+                      <Link href={`/productos/${product.slug}`}>
                         <h2 className="text-sm font-light uppercase leading-tight transition-colors hover:text-black/60">
                           {product.name}
                         </h2>

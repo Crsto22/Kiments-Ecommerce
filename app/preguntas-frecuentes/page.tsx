@@ -135,7 +135,7 @@ export default function PreguntasFrecuentesPage() {
               Contáctanos
             </Link>
             <Link
-              href="/categorias"
+              href="/productos"
               className="group inline-flex h-[52px] items-center justify-center border border-black px-12 text-[11px] font-light uppercase tracking-[0.14em] text-black transition-colors hover:bg-black hover:text-white"
             >
               Ver Tienda
