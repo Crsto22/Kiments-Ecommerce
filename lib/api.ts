@@ -1,4 +1,4 @@
-import type { ProductoListParams, ProductoListResponse, ProductoDetalleResponse } from "@/types/producto";
+import type { ProductoListParams, ProductoListResponse, ProductoDetalleResponse, EcommerceInicioResponse } from "@/types/producto";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const IMAGES_BASE_URL = process.env.NEXT_PUBLIC_IMAGES_BASE_URL ?? "";
@@ -72,6 +72,10 @@ export async function fetchProductoBySlug(
   return apiFetch<ProductoDetalleResponse>(
     `/api/public/ecommerce/productos/${encodeURIComponent(slug)}`,
   );
+}
+
+export async function fetchInicio(): Promise<EcommerceInicioResponse> {
+  return apiFetch<EcommerceInicioResponse>("/api/public/ecommerce/inicio");
 }
 
 

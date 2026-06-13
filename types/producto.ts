@@ -109,3 +109,11 @@ export interface ProductoDetalleResponse {
   colores: ColorDetalle[];
 }
 
+// --- Inicio (GET /inicio) ---
+
+export interface EcommerceInicioResponse {
+  tiendaConfigurada: boolean;
+  aleatorios: ProductoItem[];
+  masVendidos: ProductoItem[];
+}
+
