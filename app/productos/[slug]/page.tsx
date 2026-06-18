@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   CaretLeft,
   CaretRight,
   CaretUp,
+  CaretDown,
   MagnifyingGlassPlus,
   X,
   Eye,
@@ -47,6 +48,8 @@ const sizeGuideData = [
 export default function ProductoDetallePage() {
   const params = useParams();
   const slug = params.slug as string;
+  const searchParams = useSearchParams();
+  const colorParam = searchParams.get("color");
 
   const [data, setData] = useState<ProductoDetalleResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,6 +69,23 @@ export default function ProductoDetallePage() {
   const dragStartRef = useRef({ pointerX: 0, pointerY: 0, panX: 0, panY: 0 });
   const dragMovedRef = useRef(false);
 
+  // Gallery scroll refs
+  const desktopGalleryRef = useRef<HTMLDivElement | null>(null);
+  const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollUp = () => {
+    desktopGalleryRef.current?.scrollBy({ top: -210, behavior: "smooth" });
+  };
+  const scrollDown = () => {
+    desktopGalleryRef.current?.scrollBy({ top: 210, behavior: "smooth" });
+  };
+  const scrollLeft = () => {
+    mobileGalleryRef.current?.scrollBy({ left: -210, behavior: "smooth" });
+  };
+  const scrollRight = () => {
+    mobileGalleryRef.current?.scrollBy({ left: 210, behavior: "smooth" });
+  };
+
   // Selections
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -80,7 +100,14 @@ export default function ProductoDetallePage() {
     setActiveImageIndex(0);
 
     fetchProductoBySlug(slug)
-      .then((res) => setData(res))
+      .then((res) => {
+        setData(res);
+        const colorId = colorParam ? Number(colorParam) : null;
+        if (colorId && res.colores.length > 0) {
+          const index = res.colores.findIndex((c) => c.color.idColor === colorId);
+          if (index >= 0) setSelectedColorIndex(index);
+        }
+      })
       .catch((err) => {
         if (err instanceof Error && err.message.includes("404")) {
           setNotFound(true);
@@ -89,6 +116,19 @@ export default function ProductoDetallePage() {
         }
       })
       .finally(() => setLoading(false));
+  }, [slug, colorParam]);
+
+  // Canonical URL for SEO (strip color query param)
+  useEffect(() => {
+    if (!slug || typeof window === "undefined") return;
+    const canonicalUrl = `${window.location.origin}/productos/${slug}`;
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
+    link.href = canonicalUrl;
   }, [slug]);
 
   const currentColor: ColorDetalle | null =
@@ -106,6 +146,24 @@ export default function ProductoDetallePage() {
   const activeImageUrl = images[safeActiveIndex]
     ? buildImageUrl(images[safeActiveIndex].url)
     : null;
+
+  // Flat list of all images across all colors for the vertical/horizontal gallery
+  const allImages = data
+    ? data.colores.flatMap((cd, colorIndex) =>
+        (cd.imagenes?.length
+          ? cd.imagenes
+          : cd.imagenPrincipal
+            ? [cd.imagenPrincipal]
+            : []
+        ).map((img, imageIndex) => ({
+          img,
+          colorIndex,
+          imageIndex,
+          idColor: cd.color.idColor,
+          colorName: cd.color.nombre,
+        }))
+      )
+    : [];
 
   const variants: VarianteProducto[] = currentColor?.variantes
     ? [...currentColor.variantes].sort((a, b) => {
@@ -343,10 +401,10 @@ export default function ProductoDetallePage() {
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#171717] sm:px-10 lg:px-16 xl:px-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.35fr_1fr]">
-        <section className="grid gap-3 sm:grid-cols-[1fr_126px]">
+        <section className="grid gap-3 sm:grid-cols-[1fr_96px]">
           <div
             ref={imageFrameRef}
-            className="group relative aspect-[3/4] cursor-zoom-in overflow-hidden bg-white"
+            className="group relative aspect-[3/4] max-h-[420px] sm:max-h-none cursor-zoom-in overflow-hidden bg-white"
             onClick={openViewer}
           >
             {activeImageUrl ? (
@@ -414,35 +472,102 @@ export default function ProductoDetallePage() {
             )}
           </div>
 
-          {images.length > 1 && (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-1 sm:self-start">
-              {images.map((img, index) => {
-                const thumbUrl = buildImageUrl(img.urlThumb || img.url);
+          {/* Vertical gallery (desktop) — hidden scrollbar + arrows */}
+          <div className="hidden sm:flex sm:flex-col sm:gap-1" style={{ maxHeight: "620px" }}>
+            <button
+              type="button"
+              aria-label="Desplazar arriba"
+              onClick={scrollUp}
+              className="flex shrink-0 items-center justify-center h-6 bg-[#fafafa] border border-gray-200 rounded-sm text-black/40 hover:text-black hover:border-black transition-colors"
+            >
+              <CaretUp size={12} weight="bold" />
+            </button>
+            <div
+              ref={desktopGalleryRef}
+              className="flex flex-col gap-2 overflow-y-scroll [&::-webkit-scrollbar]:hidden py-1 pr-1"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {allImages.map((item) => {
+                const thumbUrl = buildImageUrl(item.img.urlThumb || item.img.url);
                 if (!thumbUrl) return null;
+                const isActive = item.colorIndex === selectedColorIndex && item.imageIndex === safeActiveIndex;
                 return (
                   <button
-                    key={img.idColorImagen ?? index}
+                    key={`v-${item.idColor}-${item.imageIndex}`}
                     type="button"
-                    aria-label="Cambiar imagen del producto"
-                    onClick={() => setActiveImageIndex(index)}
-                    className={`relative aspect-[3/4] overflow-hidden bg-white ${
-                      safeActiveIndex === index ? "ring-1 ring-black" : ""
+                    aria-label={`Ver imagen ${item.colorName}`}
+                    onClick={() => {
+                      if (item.colorIndex !== selectedColorIndex) {
+                        setSelectedColorIndex(item.colorIndex);
+                        setSelectedSize(null);
+                      }
+                      setActiveImageIndex(item.imageIndex);
+                    }}
+                    className={`relative aspect-[3/4] shrink-0 overflow-hidden bg-white transition-all ${
+                      isActive ? "ring-1 ring-black" : "opacity-60 hover:opacity-100"
                     }`}
                   >
                     <Image
                       src={thumbUrl}
-                      alt={`${data.producto.nombre} - ${index + 1}`}
+                      alt={`${data.producto.nombre} - ${item.colorName}`}
                       fill
                       unoptimized
-                      sizes="126px"
+                      sizes="96px"
                       className="object-cover object-center"
                     />
                   </button>
                 );
               })}
             </div>
-          )}
+            <button
+              type="button"
+              aria-label="Desplazar abajo"
+              onClick={scrollDown}
+              className="flex shrink-0 items-center justify-center h-6 bg-[#fafafa] border border-gray-200 rounded-sm text-black/40 hover:text-black hover:border-black transition-colors"
+            >
+              <CaretDown size={12} weight="bold" />
+            </button>
+          </div>
         </section>
+
+        {/* Horizontal gallery strip (mobile) — hidden scrollbar + arrows */}
+        <div
+          ref={mobileGalleryRef}
+          className="flex sm:hidden gap-2 overflow-x-scroll w-full [&::-webkit-scrollbar]:hidden pb-1"
+          style={{ scrollbarWidth: "none" }}
+        >
+            {allImages.map((item) => {
+              const thumbUrl = buildImageUrl(item.img.urlThumb || item.img.url);
+              if (!thumbUrl) return null;
+              const isActive = item.colorIndex === selectedColorIndex && item.imageIndex === safeActiveIndex;
+              return (
+                <button
+                  key={`h-${item.idColor}-${item.imageIndex}`}
+                  type="button"
+                  aria-label={`Ver imagen ${item.colorName}`}
+                  onClick={() => {
+                    if (item.colorIndex !== selectedColorIndex) {
+                      setSelectedColorIndex(item.colorIndex);
+                      setSelectedSize(null);
+                    }
+                    setActiveImageIndex(item.imageIndex);
+                  }}
+                  className={`relative aspect-[3/4] h-16 shrink-0 overflow-hidden bg-white transition-all ${
+                    isActive ? "ring-1 ring-black" : "opacity-50"
+                  }`}
+                >
+                  <Image
+                    src={thumbUrl}
+                    alt={`${data.producto.nombre} - ${item.colorName}`}
+                    fill
+                    unoptimized
+                    sizes="64px"
+                    className="object-cover object-center"
+                  />
+                </button>
+              );
+            })}
+          </div>
 
         <section className="pt-2 lg:pl-10">
           <nav className="mb-6 flex items-center gap-2 text-[10px] font-light uppercase tracking-widest text-black/50">

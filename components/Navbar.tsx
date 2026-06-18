@@ -99,11 +99,11 @@ export function Navbar() {
             : "-translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        <div className="mx-auto grid h-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-5 px-5 sm:px-10 lg:px-16 xl:px-20">
+        <div className="mx-auto grid h-full max-w-7xl grid-cols-[1fr_auto] sm:grid-cols-[auto_1fr_auto] items-center gap-5 px-5 sm:px-10 lg:px-16 xl:px-20">
           <Link
             href="/"
             aria-label="KIMENTS inicio"
-            className="flex min-w-[96px] flex-col leading-none text-black"
+            className="hidden sm:flex min-w-[96px] flex-col items-center leading-none text-black"
             onClick={() => setIsSearchOpen(false)}
           >
             <span className="font-[family-name:var(--font-kiments)] text-[20px] font-normal tracking-[0.14em] sm:text-[24px]">
@@ -114,8 +114,8 @@ export function Navbar() {
             </span>
           </Link>
 
-          <form
-            className="mx-auto flex h-9 w-full max-w-xl items-center border border-black bg-white px-3 text-black"
+            <form
+            className="mx-auto flex h-9 w-full sm:max-w-xl items-center border border-black bg-white px-3 text-black"
             onSubmit={(event) => event.preventDefault()}
           >
             <input

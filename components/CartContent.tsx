@@ -31,9 +31,10 @@ interface CartContentProps {
   backHref: string;
   backLabel: string;
   footer: ReactNode;
+  hideTotals?: boolean;
 }
 
-export function CartContent({ backHref, backLabel, footer }: CartContentProps) {
+export function CartContent({ backHref, backLabel, footer, hideTotals }: CartContentProps) {
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -135,7 +136,7 @@ export function CartContent({ backHref, backLabel, footer }: CartContentProps) {
         )}
       </div>
 
-      {cartItems.length > 0 && (
+      {cartItems.length > 0 && !hideTotals && (
         <div className="border-t border-black/10 bg-white px-5 py-6 sm:px-8">
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium uppercase tracking-widest">

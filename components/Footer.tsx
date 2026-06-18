@@ -42,7 +42,7 @@ const contactItems = [
 export function Footer() {
   const pathname = usePathname();
 
-  if (pathname === "/pago") {
+  if (pathname === "/pago" || pathname === "/carrito") {
     return null;
   }
 

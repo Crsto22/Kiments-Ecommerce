@@ -421,13 +421,13 @@ export default function ProductosPage() {
                         <BrandPlaceholder />
                       )}
                       <Link
-                        href={`/productos/${product.slug}`}
+                        href={`/productos/${product.slug}?color=${product.idColor}`}
                         className="absolute inset-0 z-10"
                         aria-label={`Ver ${product.name}`}
                       />
                       <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Link
-                          href={`/productos/${product.slug}`}
+                          href={`/productos/${product.slug}?color=${product.idColor}`}
                           aria-label="Ver producto"
                           className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
                         >
