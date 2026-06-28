@@ -1051,7 +1051,7 @@ export default function ProductoDetallePage() {
       </div>
 
       {data.recomendados.length > 0 && (
-        <section className="mt-20 bg-white px-6 py-10 text-[#242424]">
+        <section className="-mx-6 mt-20 px-4 py-10 text-[#242424] sm:-mx-10 sm:px-6 lg:-mx-16 lg:px-8 xl:-mx-24 xl:px-10">
           <h2 className="mb-8 text-center text-lg font-light uppercase tracking-[0.12em] text-black">
             Productos que te pueden gustar
           </h2>
