@@ -81,7 +81,7 @@ export async function fetchInicio(): Promise<EcommerceInicioResponse> {
 
 export interface EcommercePedidoCreateRequest {
   cliente: {
-    dni: string;
+    dni?: string;
     nombres: string;
     apellidos: string;
     correo: string;

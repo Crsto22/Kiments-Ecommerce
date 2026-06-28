@@ -270,7 +270,7 @@ export default function PagoPage() {
   const validateStep1 = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!/^\d{8}$/.test(docNumber.trim())) {
+    if (docNumber.trim() && !/^\d{8}$/.test(docNumber.trim())) {
       newErrors.docNumber = "El DNI debe tener 8 dígitos";
     }
     if (!firstName.trim()) {
@@ -337,7 +337,7 @@ export default function PagoPage() {
     try {
       const pedido = await createEcommercePedido({
         cliente: {
-          dni: docNumber,
+          dni: docNumber.trim() ? docNumber : undefined,
           nombres: firstName,
           apellidos: lastName,
           correo: email,
@@ -915,22 +915,6 @@ export default function PagoPage() {
                 <section>
                   <h2 className="mb-5 text-xl font-medium text-[#222]">Información de contacto</h2>
 
-                  {/* DNI */}
-                  <div className="mb-4">
-                    <div className="grid grid-cols-[72px_1fr] overflow-hidden rounded-md border border-gray-300 bg-white focus-within:border-black focus-within:ring-1 focus-within:ring-black">
-                      <div className="flex items-center justify-center border-r border-gray-300 bg-[#fafafa]">
-                        <span className="text-sm font-light text-black/60">DNI</span>
-                      </div>
-                      <input
-                        aria-label="Número de DNI"
-                        placeholder="Número de Documento"
-                        value={docNumber}
-                        onChange={(e) => { setDocNumber(e.target.value); }}
-                        className="h-12 px-4 text-sm font-light outline-none"
-                      />
-                    </div>
-                  </div>
-
                   {/* Nombre y Apellido */}
                   <div className="mb-4 grid gap-3 sm:grid-cols-2">
                     <div>
@@ -1205,7 +1189,7 @@ export default function PagoPage() {
                           </div>
                           <div>
                             <p className="text-[11px] font-medium uppercase tracking-wider text-black/40">Referencia</p>
-                            <p className="mt-0.5 text-[13px] text-black/60">
+                             <p className="mt-0.5 text-[13px] text-black/60">
                               Frente al Parque Cánepa, Gamarra
                             </p>
                           </div>
@@ -1220,6 +1204,36 @@ export default function PagoPage() {
                         </div>
                       </div>
                     </div>
+                  )}
+                </section>
+
+                {/* Informacion adicional */}
+                <section>
+                  <h2 className="mb-2 text-xl font-medium text-[#222]">Información adicional</h2>
+                  <p className="mb-5 text-[13px] font-light text-black/55">
+                    Estos datos son opcionales, pero nos ayudan a brindarte una mejor atención.
+                  </p>
+
+                  {/* DNI opcional */}
+                  <div className="grid grid-cols-[72px_1fr] overflow-hidden rounded-md border border-gray-300 bg-white focus-within:border-black focus-within:ring-1 focus-within:ring-black">
+                    <div className="flex items-center justify-center border-r border-gray-300 bg-[#fafafa]">
+                      <span className="text-sm font-light text-black/60">DNI</span>
+                    </div>
+                    <input
+                      aria-label="Número de DNI (opcional)"
+                      placeholder="Número de Documento (opcional)"
+                      value={docNumber}
+                      onChange={(e) => {
+                        setDocNumber(e.target.value.replace(/\D/g, "").slice(0, 8));
+                        setErrors((prev) => ({ ...prev, docNumber: "" }));
+                      }}
+                      className="h-12 px-4 text-sm font-light outline-none"
+                    />
+                  </div>
+                  {errors.docNumber && (
+                    <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-red-600">
+                      <XCircle size={14} /> {errors.docNumber}
+                    </p>
                   )}
                 </section>
 
@@ -1254,11 +1268,13 @@ export default function PagoPage() {
                 <section>
                   <h2 className="mb-5 text-xl font-medium text-[#222]">Resumen del contacto</h2>
                   <div className="rounded-lg border border-gray-200 bg-[#fafafa] divide-y divide-gray-200">
-                    {/* DNI */}
-                    <div className="flex items-center justify-between px-4 py-3">
-                      <span className="text-[13px] text-black/50">DNI</span>
-                      <span className="text-[13px] font-medium text-[#222]">{docNumber}</span>
-                    </div>
+                    {/* DNI (solo si se ingreso) */}
+                    {docNumber.trim() && (
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <span className="text-[13px] text-black/50">DNI</span>
+                        <span className="text-[13px] font-medium text-[#222]">{docNumber}</span>
+                      </div>
+                    )}
                     {/* Nombre completo */}
                     <div className="flex items-center justify-between px-4 py-3">
                       <span className="text-[13px] text-black/50">Nombre</span>
