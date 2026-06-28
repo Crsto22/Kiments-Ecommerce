@@ -1,7 +1,8 @@
 import type { ProductoListParams, ProductoListResponse, ProductoDetalleResponse, EcommerceInicioResponse } from "@/types/producto";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-const IMAGES_BASE_URL = process.env.NEXT_PUBLIC_IMAGES_BASE_URL ?? "";
+const API_BASE_PATH = "/api/public";
+const MEDIA_BASE_URL =
+  process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.replace(/\/+$/, "") ?? "";
 
 class ApiError extends Error {
   status: number;
@@ -16,7 +17,7 @@ class ApiError extends Error {
 }
 
 async function apiFetch<T>(endpoint: string, init?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_PATH}${endpoint}`;
 
   let res: Response;
   try {
@@ -62,7 +63,7 @@ export async function fetchProductos(
   params: ProductoListParams = {},
 ): Promise<ProductoListResponse> {
   const qs = buildSearchParams(params);
-  const endpoint = `/api/public/ecommerce/productos${qs ? `?${qs}` : ""}`;
+  const endpoint = `/ecommerce/productos${qs ? `?${qs}` : ""}`;
   return apiFetch<ProductoListResponse>(endpoint);
 }
 
@@ -70,19 +71,107 @@ export async function fetchProductoBySlug(
   slug: string,
 ): Promise<ProductoDetalleResponse> {
   return apiFetch<ProductoDetalleResponse>(
-    `/api/public/ecommerce/productos/${encodeURIComponent(slug)}`,
+    `/ecommerce/productos/${encodeURIComponent(slug)}`,
   );
 }
 
 export async function fetchInicio(): Promise<EcommerceInicioResponse> {
-  return apiFetch<EcommerceInicioResponse>("/api/public/ecommerce/inicio");
+  return apiFetch<EcommerceInicioResponse>("/ecommerce/inicio");
+}
+
+export interface EcommercePedidoCreateRequest {
+  cliente: {
+    dni: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    telefono: string;
+    deseaFactura: boolean;
+    ruc?: string;
+  };
+  envio: {
+    tipo: "DELIVERY" | "PICKUP";
+    direccion?: string;
+    referencia?: string;
+    departamento?: string;
+    provincia?: string;
+    distrito?: string;
+    tarifa?: string;
+  };
+  metodoPago: "YAPE" | "BCP";
+  items: Array<{ idProductoVariante: number; cantidad: number }>;
+  turnstileToken?: string;
+}
+
+export interface EcommercePedidoResponse {
+  codigo: string;
+  estado: "ESPERANDO_COMPROBANTE" | "PAGO_EN_REVISION" | "CANCELADO_POR_TIEMPO";
+  reservaExpiraAt: string;
+  total: number;
+  metodoPago?: string | null;
+  comprobanteUrl: string | null;
+  comprobanteToken?: string | null;
+  detalles?: EcommercePedidoDetalle[];
+}
+
+export interface EcommercePedidoDetalle {
+  idProductoVariante: number | null;
+  nombreProducto: string;
+  colorNombre: string;
+  tallaNombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  imagenUrl: string | null;
+}
+
+export async function createEcommercePedido(
+  payload: EcommercePedidoCreateRequest,
+): Promise<EcommercePedidoResponse> {
+  return apiFetch<EcommercePedidoResponse>("/ecommerce/pedidos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadEcommerceComprobante(
+  token: string,
+  file: File,
+): Promise<EcommercePedidoResponse> {
+  const formData = new FormData();
+  formData.set("file", file);
+
+  const res = await fetch(`${API_BASE_PATH}/ecommerce/pedidos/comprobante?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let body: { message?: string; code?: string } | undefined;
+    try {
+      body = await res.json();
+    } catch {
+      // no body
+    }
+    throw new ApiError(body?.message ?? `Error del servidor (${res.status})`, res.status, body?.code);
+  }
+
+  return res.json() as Promise<EcommercePedidoResponse>;
+}
+
+export async function fetchEcommercePedidoActual(token: string): Promise<EcommercePedidoResponse> {
+  return apiFetch<EcommercePedidoResponse>(
+    `/ecommerce/pedidos/actual?token=${encodeURIComponent(token)}`,
+  );
 }
 
 
 export function buildImageUrl(relativePath: string | null | undefined): string | null {
   if (!relativePath) return null;
-  if (relativePath.startsWith("http")) return relativePath;
-  return `${IMAGES_BASE_URL}${relativePath}`;
+  const parsed = relativePath.startsWith("http") ? new URL(relativePath) : null;
+  const path = parsed ? `${parsed.pathname}${parsed.search}` : relativePath;
+  const mediaPath = `${path}`;
+  return MEDIA_BASE_URL ? `${MEDIA_BASE_URL}${mediaPath}` : mediaPath;
 }
 
 export { ApiError };

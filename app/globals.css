@@ -10,9 +10,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
   --font-brand: var(--font-kiments);
-  --animate-hero-text-top: hero-slide-from-top 0.7s ease-out;
-  --animate-hero-text-bottom: hero-slide-from-bottom 0.7s ease-out;
-  --animate-hero-image: hero-image-in 0.8s ease-out;
+  --animate-marquee: marquee-scroll 18s linear infinite;
+  --animate-product-enter: product-enter 0.55s ease-out both;
+  --animate-product-image-enter: product-image-enter 0.5s ease-out both;
 }
 
 body {
@@ -90,6 +90,57 @@ body {
 
 .product-viewer-closing .product-viewer-image {
   animation: product-image-zoom-out 300ms cubic-bezier(0.64, 0, 0.78, 0) both;
+}
+
+.cart-alert {
+  animation: cart-alert-in 260ms ease-out both;
+}
+
+.color-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.color-tooltip-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.55rem);
+  transform: translateX(-50%) translateY(0.25rem);
+  pointer-events: none;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+  background: #000;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.color-tooltip-bubble--sold-out {
+  background: #b91c1c;
+}
+
+.color-tooltip:hover .color-tooltip-bubble {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes cart-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes product-viewer-fade-in {
@@ -185,10 +236,60 @@ body {
   }
 }
 
-@keyframes hero-slide-from-top {
+/* === Hero Triptych Animation System (CSS transitions, not keyframes) === */
+
+.hero-text-mask {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.hero-text-up {
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s ease;
+}
+
+.is-active .hero-text-up {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.hero-triptych-wrap {
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 1.2s cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+.is-active .hero-triptych-wrap {
+  transform: scaleY(1);
+}
+
+.hero-arch-frame {
+  border-radius: 999px 999px 0 0;
+}
+
+.hero-triptych-inner {
+  transform: scale(1.5);
+  transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.is-active .hero-triptych-inner {
+  transform: scale(1);
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes product-enter {
   from {
     opacity: 0;
-    transform: translateY(-60px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -196,21 +297,36 @@ body {
   }
 }
 
-@keyframes hero-slide-from-bottom {
-  from {
-    opacity: 0;
-    transform: translateY(60px);
-  }
-  to {
+@keyframes cart-item-exit {
+  0% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
+    max-height: 600px;
+    padding-bottom: 24px;
+    border-bottom-width: 1px;
+  }
+  60% {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(60px);
+    max-height: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
   }
 }
 
-@keyframes hero-image-in {
+.cart-item-exit {
+  animation: cart-item-exit 0.4s ease-in forwards;
+  overflow: hidden;
+}
+
+@keyframes product-image-enter {
   from {
     opacity: 0;
-    transform: scale(1.08);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;

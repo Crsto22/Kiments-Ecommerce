@@ -1,17 +1,25 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Eye, ShoppingCartSimple, Warning, Spinner, Storefront } from "@phosphor-icons/react";
-import { HeroCarousel } from "@/components/HeroCarousel";
+import { Warning, Storefront } from "@phosphor-icons/react";
+import { Hero } from "@/components/Hero";
 import { InstagramCarousel } from "@/components/InstagramCarousel";
-import { fetchInicio, buildImageUrl } from "@/lib/api";
-import type { ProductoItem } from "@/types/producto";
+import { ProductCarousel } from "@/components/ProductCarousel";
+import { ProductCard } from "@/components/ProductCard";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import { buildImageUrl, fetchInicio } from "@/lib/api";
+import type { EcommerceInicioImagenProducto, EcommercePortada, ProductoItem } from "@/types/producto";
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [aleatorios, setAleatorios] = useState<ProductoItem[]>([]);
   const [masVendidos, setMasVendidos] = useState<ProductoItem[]>([]);
+  const [portadas, setPortadas] = useState<EcommercePortada[]>([]);
+  const [imagenesProductos, setImagenesProductos] = useState<EcommerceInicioImagenProducto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tiendaConfigurada, setTiendaConfigurada] = useState(true);
@@ -22,6 +30,8 @@ export default function Home() {
     fetchInicio()
       .then((res) => {
         setTiendaConfigurada(res.tiendaConfigurada);
+        setPortadas(res.portadas ?? []);
+        setImagenesProductos(res.imagenesProductos ?? []);
         setAleatorios(res.aleatorios);
         setMasVendidos(res.masVendidos);
       })
@@ -31,7 +41,42 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white">
-      <HeroCarousel />
+      <Hero portadas={portadas} />
+
+      {!loading && !error && tiendaConfigurada && imagenesProductos.length > 0 && (
+        <section className="bg-white pt-3 pb-8">
+          <Carousel opts={{ align: "start", loop: true }} className="relative">
+            <CarouselContent className="-ml-0">
+              {imagenesProductos.map((item) => {
+                const imageUrl = buildImageUrl(item.imagenUrl || item.imagenThumbUrl);
+                if (!imageUrl) return null;
+                return (
+                  <CarouselItem
+                    key={item.idProducto}
+                    className="basis-[75%] pl-0 sm:basis-[45%] lg:basis-1/4"
+                  >
+                    <Link href={`/productos/${item.slug}`} className="block">
+                      <figure className="group relative aspect-[3/4] w-full cursor-pointer overflow-hidden bg-[#eee9e2]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imageUrl}
+                          alt={item.nombre}
+                          className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-110"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-500 ease-out group-hover:bg-black/15" />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+                        <figcaption className="absolute inset-x-0 bottom-0 translate-y-1 px-4 pb-4 text-center text-[12px] font-light uppercase tracking-[0.14em] text-white underline underline-offset-4 opacity-90 transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:text-[14px]">
+                          MODELO {item.slug}
+                        </figcaption>
+                      </figure>
+                    </Link>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+        </section>
+      )}
 
       {loading && (
         <section className="bg-white px-7 py-12 sm:px-10 lg:px-16 xl:px-20">
@@ -83,26 +128,8 @@ export default function Home() {
       )}
 
       {!loading && !error && tiendaConfigurada && aleatorios.length > 0 && (
-        <section className="bg-white px-7 py-12 text-[#242424] sm:px-10 lg:px-16 xl:px-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4 lg:gap-10 xl:gap-12">
-              {aleatorios.map((item) => (
-                <ProductCard
-                  key={`${item.producto.idProducto}-${item.color.idColor}`}
-                  item={item}
-                />
-              ))}
-            </div>
-
-            <div className="mt-8 flex justify-center">
-              <Link
-                href="/productos"
-                className="inline-flex h-10 min-w-28 items-center justify-center bg-[#3d3d3d] px-8 text-[11px] font-semibold uppercase tracking-[0.04em] text-white transition-colors hover:bg-black"
-              >
-                Ver más
-              </Link>
-            </div>
-          </div>
+        <section className="bg-white px-6 py-10 text-[#242424]">
+          <ProductCarousel items={aleatorios} />
         </section>
       )}
 
@@ -122,18 +149,30 @@ export default function Home() {
       </section>
 
       {!loading && !error && tiendaConfigurada && masVendidos.length > 0 && (
-        <section className="bg-white px-7 py-14 text-[#242424] sm:px-10 lg:px-16 xl:px-20">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-center text-2xl font-light uppercase tracking-[0.12em] sm:text-3xl">
-              Productos más vendidos
-            </h2>
+        <section className="bg-white px-6 py-12 text-[#242424]">
+          <div className="grid items-center gap-10 lg:grid-cols-[280px_1fr]">
+            <div>
+              <h2 className="text-2xl font-bold uppercase tracking-[0.08em] sm:text-3xl">
+                Productos más vendidos
+              </h2>
+              <p className="mt-3 text-sm font-light text-black/60">
+                Descubre más de todos los productos mas vendidos
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/productos"
+                  className="inline-flex h-10 min-w-28 items-center justify-center bg-[#3d3d3d] px-8 text-[11px] font-semibold uppercase tracking-[0.04em] text-white transition-colors hover:bg-black"
+                >
+                  Explorar
+                </Link>
+              </div>
+            </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-4 lg:gap-10 xl:gap-12">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
               {masVendidos.map((item) => (
-                <ProductCard
-                  key={`${item.producto.idProducto}-${item.color.idColor}`}
-                  item={item}
-                />
+                <div key={`${item.producto.idProducto}-${item.color.idColor}`}>
+                  <ProductCard item={item} centered />
+                </div>
               ))}
             </div>
           </div>
@@ -142,114 +181,5 @@ export default function Home() {
 
       <InstagramCarousel />
     </main>
-  );
-}
-
-function ProductCard({ item }: Readonly<{ item: ProductoItem }>) {
-  const priceLabel =
-    item.precioMinimo === item.precioMaximo
-      ? `S/ ${item.precioMinimo.toFixed(2)}`
-      : `S/ ${item.precioMinimo.toFixed(2)} - S/ ${item.precioMaximo.toFixed(2)}`;
-
-  const imageUrl = buildImageUrl(
-    item.imagenPrincipal?.urlThumb ||
-      item.imagenPrincipal?.url ||
-      item.producto.imagenGlobalUrl ||
-      item.producto.imagenGlobalThumbUrl,
-  );
-
-  const sizes = [...item.variantes]
-    .sort((a, b) => {
-      const na = Number(a.talla.nombre);
-      const nb = Number(b.talla.nombre);
-      if (!isNaN(na) && !isNaN(nb)) return na - nb;
-      return a.talla.nombre.localeCompare(b.talla.nombre);
-    })
-    .map((v) => ({
-      label: v.talla.nombre,
-      disponible: v.disponible,
-      stock: v.stock,
-    }));
-
-  return (
-    <article className="min-w-0">
-      <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={item.producto.nombre}
-            fill
-            unoptimized
-            sizes="(min-width: 1024px) 28vw, (min-width: 640px) 30vw, 50vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-[#f0f0f0] px-2">
-            <span className="font-[family-name:var(--font-kiments)] text-[18px] font-normal tracking-[0.12em] text-black/55">
-              KIMENTS
-            </span>
-          </div>
-        )}
-        <Link
-          href={`/productos/${item.producto.slug}?color=${item.color.idColor}`}
-          className="absolute inset-0 z-10"
-          aria-label={`Ver ${item.producto.nombre}`}
-        />
-        {item.estadoStock === "AGOTADO" && (
-          <span className="absolute bottom-0 left-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
-            Agotado
-          </span>
-        )}
-        {item.estadoStock === "PARCIAL" && (
-          <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
-            Pocas unidades
-          </span>
-        )}
-        <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <Link
-            href={`/productos/${item.producto.slug}?color=${item.color.idColor}`}
-            aria-label="Ver producto"
-            className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-          >
-            <Eye size={18} weight="regular" />
-          </Link>
-          <button
-            type="button"
-            aria-label="Agregar al carrito"
-            className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-          >
-            <ShoppingCartSimple size={18} weight="regular" />
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-3">
-        <span
-          aria-label={`Color: ${item.color.nombre}`}
-          className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.45)]"
-          style={{ backgroundColor: item.color.hex }}
-        />
-        <h2 className="mt-3 text-[12px] font-normal uppercase leading-tight tracking-[0.02em]">
-          {item.producto.nombre}
-        </h2>
-        <p className="mt-1 text-[12px] leading-none">{priceLabel}</p>
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {sizes.map((size) => (
-            <span
-              key={size.label}
-              className={`inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[10px] font-light uppercase ${
-                size.disponible
-                  ? "border-black/20 text-black/70"
-                  : "border-black/5 text-black/25 line-through"
-              }`}
-              title={size.disponible ? `${size.stock} en stock` : "Agotado"}
-            >
-              {size.label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </article>
   );
 }

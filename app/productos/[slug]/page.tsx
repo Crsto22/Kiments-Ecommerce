@@ -8,13 +8,15 @@ import {
   CaretRight,
   CaretUp,
   CaretDown,
+  Basket as BasketIcon,
+  CheckCircle,
   MagnifyingGlassPlus,
+  SmileySad,
   X,
-  Eye,
-  ShoppingCartSimple,
-  Warning,
+  XCircle,
   Spinner,
   Storefront,
+  Truck,
 } from "@phosphor-icons/react";
 import {
   type CSSProperties,
@@ -25,31 +27,26 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import { MAX_CART_QUANTITY_PER_VARIANT, useCart } from "@/components/CartProvider";
+import { ProductCarousel } from "@/components/ProductCarousel";
 import { fetchProductoBySlug, buildImageUrl } from "@/lib/api";
 import type { ProductoDetalleResponse, ColorDetalle, VarianteProducto } from "@/types/producto";
 
-const sizeGuideData = [
-  { talla: "S", busto: "84-88", cintura: "66-70", cadera: "92-96" },
-  { talla: "M", busto: "89-93", cintura: "71-75", cadera: "97-101" },
-  { talla: "L", busto: "94-98", cintura: "76-80", cadera: "102-106" },
-  { talla: "XL", busto: "99-104", cintura: "81-86", cadera: "107-112" },
-];
+interface CartNotice {
+  type: "success" | "error";
+  title: string;
+  productName: string;
+  detail: string;
+}
+
+type AddButtonState = "idle" | "loading" | "success";
 
 export default function ProductoDetallePage() {
   const params = useParams();
   const slug = params.slug as string;
   const searchParams = useSearchParams();
   const colorParam = searchParams.get("color");
+  const { addItem } = useCart();
 
   const [data, setData] = useState<ProductoDetalleResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,18 +57,25 @@ export default function ProductoDetallePage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isViewerMounted, setIsViewerMounted] = useState(false);
   const [viewerPhase, setViewerPhase] = useState<"opening" | "closing">("opening");
+  const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  const [viewerSubtitle, setViewerSubtitle] = useState("");
+  const [viewerMode, setViewerMode] = useState<"gallery" | "size-guide">("gallery");
   const [zoomStyle, setZoomStyle] = useState<CSSProperties>({});
   const [isDetailZoomed, setIsDetailZoomed] = useState(false);
   const [isDraggingZoomedImage, setIsDraggingZoomedImage] = useState(false);
   const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
   const imageFrameRef = useRef<HTMLDivElement | null>(null);
+  const sizeGuideButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const addedTimerRef = useRef<number | null>(null);
   const dragStartRef = useRef({ pointerX: 0, pointerY: 0, panX: 0, panY: 0 });
   const dragMovedRef = useRef(false);
 
   // Gallery scroll refs
   const desktopGalleryRef = useRef<HTMLDivElement | null>(null);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
+  const desktopGalleryItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const mobileGalleryItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const scrollUp = () => {
     desktopGalleryRef.current?.scrollBy({ top: -210, behavior: "smooth" });
@@ -79,16 +83,22 @@ export default function ProductoDetallePage() {
   const scrollDown = () => {
     desktopGalleryRef.current?.scrollBy({ top: 210, behavior: "smooth" });
   };
-  const scrollLeft = () => {
-    mobileGalleryRef.current?.scrollBy({ left: -210, behavior: "smooth" });
-  };
-  const scrollRight = () => {
-    mobileGalleryRef.current?.scrollBy({ left: 210, behavior: "smooth" });
-  };
-
   // Selections
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [addedVariantId, setAddedVariantId] = useState<number | null>(null);
+  const [cartNotice, setCartNotice] = useState<CartNotice | null>(null);
+  const [addButtonState, setAddButtonState] = useState<AddButtonState>("idle");
+  const buttonStateTimerRef = useRef<number | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (addedTimerRef.current) window.clearTimeout(addedTimerRef.current);
+      if (buttonStateTimerRef.current) window.clearTimeout(buttonStateTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -102,6 +112,7 @@ export default function ProductoDetallePage() {
     fetchProductoBySlug(slug)
       .then((res) => {
         setData(res);
+        setSelectedQuantity(1);
         const colorId = colorParam ? Number(colorParam) : null;
         if (colorId && res.colores.length > 0) {
           const index = res.colores.findIndex((c) => c.color.idColor === colorId);
@@ -134,28 +145,24 @@ export default function ProductoDetallePage() {
   const currentColor: ColorDetalle | null =
     data && data.colores.length > 0 ? data.colores[selectedColorIndex] ?? data.colores[0] : null;
 
-  const images = currentColor?.imagenes?.length
-    ? currentColor.imagenes
-    : currentColor?.imagenPrincipal
-    ? [currentColor.imagenPrincipal]
-    : [];
+  const images = (currentColor?.imagenes ?? []).filter((img) => img.url || img.urlThumb);
 
   const safeActiveIndex =
     activeImageIndex >= images.length ? 0 : activeImageIndex;
 
   const activeImageUrl = images[safeActiveIndex]
-    ? buildImageUrl(images[safeActiveIndex].url)
+    ? buildImageUrl(images[safeActiveIndex].url || images[safeActiveIndex].urlThumb)
     : null;
+  const sizeGuideImageUrl = buildImageUrl(
+    data?.producto.guiaTallasUrl || data?.producto.guiaTallasThumbUrl,
+  );
 
-  // Flat list of all images across all colors for the vertical/horizontal gallery
+  // Flat list of real color images only. Colors without photos use the main placeholder.
   const allImages = data
     ? data.colores.flatMap((cd, colorIndex) =>
-        (cd.imagenes?.length
-          ? cd.imagenes
-          : cd.imagenPrincipal
-            ? [cd.imagenPrincipal]
-            : []
-        ).map((img, imageIndex) => ({
+        cd.imagenes
+          .filter((img) => img.url || img.urlThumb)
+          .map((img, imageIndex) => ({
           img,
           colorIndex,
           imageIndex,
@@ -164,6 +171,63 @@ export default function ProductoDetallePage() {
         }))
       )
     : [];
+
+  const activeGalleryIndex = allImages.findIndex(
+    (item) =>
+      item.colorIndex === selectedColorIndex && item.imageIndex === safeActiveIndex,
+  );
+
+  const activeGalleryImage =
+    activeGalleryIndex >= 0 ? allImages[activeGalleryIndex] : null;
+
+  const viewerColorName = activeGalleryImage?.colorName ?? currentColor?.color.nombre ?? "";
+
+  const getGalleryKey = (idColor: number, imageIndex: number) => `${idColor}-${imageIndex}`;
+
+  const scrollToColorImage = (colorIndex: number) => {
+    const firstImage = allImages.find((item) => item.colorIndex === colorIndex);
+    if (!firstImage) return;
+    const galleryKey = getGalleryKey(firstImage.idColor, firstImage.imageIndex);
+    desktopGalleryItemRefs.current[galleryKey]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+    mobileGalleryItemRefs.current[galleryKey]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  };
+
+  const setActiveGalleryImage = useCallback(
+    (nextIndex: number) => {
+      const nextImage = allImages[nextIndex];
+      if (!nextImage) return;
+      const nextUrl = buildImageUrl(nextImage.img.url || nextImage.img.urlThumb);
+      if (!nextUrl) return;
+      if (nextImage.colorIndex !== selectedColorIndex) {
+        setSelectedColorIndex(nextImage.colorIndex);
+        setSelectedSize(null);
+        setSelectedQuantity(1);
+      }
+      setActiveImageIndex(nextImage.imageIndex);
+      setViewerImageUrl(nextUrl);
+      setViewerSubtitle(nextImage.colorName);
+      const galleryKey = getGalleryKey(nextImage.idColor, nextImage.imageIndex);
+      desktopGalleryItemRefs.current[galleryKey]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+      mobileGalleryItemRefs.current[galleryKey]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    },
+    [allImages, selectedColorIndex],
+  );
 
   const variants: VarianteProducto[] = currentColor?.variantes
     ? [...currentColor.variantes].sort((a, b) => {
@@ -177,6 +241,7 @@ export default function ProductoDetallePage() {
   const currentVariant = selectedSize
     ? variants.find((v) => v.talla.nombre === selectedSize) ?? null
     : null;
+  const maxQuantity = currentVariant ? Math.min(currentVariant.stock, MAX_CART_QUANTITY_PER_VARIANT) : 1;
 
   const hasOffer =
     currentVariant && currentVariant.tipoOfertaAplicada !== "NINGUNA";
@@ -189,23 +254,138 @@ export default function ProductoDetallePage() {
       : `S/ ${currentColor.precioMinimo.toFixed(2)} - S/ ${currentColor.precioMaximo.toFixed(2)}`
     : "";
 
+  const addedCurrentVariant =
+    currentVariant?.idProductoVariante === addedVariantId;
+
+  const animateAddedImageToCart = (image: string | null) => {
+    if (!image) return;
+    const source = addButtonRef.current;
+    const target = Array.from(document.querySelectorAll<HTMLElement>("[data-cart-target]")).find(
+      (element) => element.getClientRects().length > 0,
+    );
+    if (!source || !target) return;
+
+    const sourceRect = source.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const startX = sourceRect.left + sourceRect.width / 2;
+    const startY = sourceRect.top + sourceRect.height / 2;
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.bottom + 48;
+    const midX = endX - startX;
+    const midY = endY - startY;
+    const arcY = Math.min(midY, -190);
+    const flyingImage = document.createElement("img");
+    flyingImage.src = image;
+    flyingImage.alt = "";
+    flyingImage.style.cssText =
+      `position:fixed;left:${startX}px;top:${startY}px;width:52px;height:70px;object-fit:cover;z-index:90;pointer-events:none;box-shadow:0 12px 24px rgba(0,0,0,.16);transform:translate(-50%,-50%);`;
+    document.body.appendChild(flyingImage);
+
+    flyingImage
+      .animate(
+        [
+          {
+            transform: "translate(-50%,-50%) scale(1) rotate(0deg)",
+            opacity: 1,
+          },
+          {
+            transform: `translate(calc(-50% + ${midX * 0.42}px), calc(-50% + ${arcY}px)) scale(.9) rotate(-6deg)`,
+            opacity: 0.95,
+            offset: 0.5,
+          },
+          {
+            transform: `translate(calc(-50% + ${midX}px), calc(-50% + ${midY}px)) scale(.22) rotate(0deg)`,
+            opacity: 0.2,
+          },
+        ],
+        { duration: 2700, easing: "cubic-bezier(.22,.75,.2,1)" },
+      )
+      .finished.finally(() => flyingImage.remove());
+  };
+
+  const handleAddToCart = () => {
+    if (!data || !currentColor || !currentVariant || !currentVariant.disponible) {
+      return;
+    }
+
+    setAddButtonState("loading");
+    const quantity = Math.max(1, Math.min(selectedQuantity, currentVariant.stock, MAX_CART_QUANTITY_PER_VARIANT));
+
+    const image =
+      currentColor.imagenPrincipal?.origen === "COLOR"
+        ? buildImageUrl(currentColor.imagenPrincipal.url || currentColor.imagenPrincipal.urlThumb)
+        : null;
+
+    window.clearTimeout(buttonStateTimerRef.current ?? undefined);
+    buttonStateTimerRef.current = window.setTimeout(() => {
+      const result = addItem({
+        idProducto: data.producto.idProducto,
+        slug: data.producto.slug,
+        idProductoVariante: currentVariant.idProductoVariante,
+        name: data.producto.nombre,
+        colorName: currentColor.color.nombre,
+        colorHex: currentColor.color.hex,
+        sizeName: currentVariant.talla.nombre,
+        price: currentVariant.precioVigente,
+        quantity,
+        stock: currentVariant.stock,
+        image,
+      });
+
+      if (result === "added") {
+        setAddedVariantId(currentVariant.idProductoVariante);
+        setAddButtonState("success");
+        animateAddedImageToCart(image ?? "/ico/KimentsLogo.ico");
+      } else {
+        setAddButtonState("idle");
+      }
+
+      setCartNotice({
+        type: result === "added" ? "success" : "error",
+        title:
+          result === "added"
+            ? "Producto agregado correctamente"
+            : result === "max"
+            ? "Tu carrito ya tiene la cantidad máxima de este artículo"
+            : "No se pudo agregar el producto",
+        productName: data.producto.nombre,
+        detail: `${currentColor.color.nombre} / ${currentVariant.talla.nombre}`,
+      });
+
+      if (addedTimerRef.current) window.clearTimeout(addedTimerRef.current);
+      addedTimerRef.current = window.setTimeout(() => {
+        setAddedVariantId(null);
+        setCartNotice(null);
+        setAddButtonState("idle");
+      }, 1800);
+    }, 280);
+  };
+
   // Zoom handlers
   const showPreviousImage = useCallback(() => {
     setIsDetailZoomed(false);
     setIsDraggingZoomedImage(false);
     setZoomPan({ x: 0, y: 0 });
-    setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  }, [images.length]);
+    if (viewerMode !== "gallery") return;
+    if (allImages.length <= 1) return;
+    const nextIndex =
+      activeGalleryIndex <= 0 ? allImages.length - 1 : activeGalleryIndex - 1;
+    setActiveGalleryImage(nextIndex);
+  }, [activeGalleryIndex, allImages.length, setActiveGalleryImage, viewerMode]);
 
   const showNextImage = useCallback(() => {
     setIsDetailZoomed(false);
     setIsDraggingZoomedImage(false);
     setZoomPan({ x: 0, y: 0 });
-    setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  }, [images.length]);
+    if (viewerMode !== "gallery") return;
+    if (allImages.length <= 1) return;
+    const nextIndex =
+      activeGalleryIndex >= allImages.length - 1 ? 0 : activeGalleryIndex + 1;
+    setActiveGalleryImage(nextIndex);
+  }, [activeGalleryIndex, allImages.length, setActiveGalleryImage, viewerMode]);
 
-  const getZoomStyle = (): CSSProperties => {
-    const frame = imageFrameRef.current;
+  const getZoomStyle = (sourceElement: HTMLElement | null): CSSProperties => {
+    const frame = sourceElement;
     if (!frame) return {};
     const source = frame.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
@@ -235,9 +415,18 @@ export default function ProductoDetallePage() {
     } as CSSProperties;
   };
 
-  const openViewer = () => {
+  const openViewer = (
+    sourceElement: HTMLElement | null = imageFrameRef.current,
+    imageUrl = activeImageUrl,
+    subtitle = viewerColorName,
+    mode: "gallery" | "size-guide" = "gallery",
+  ) => {
+    if (!imageUrl) return;
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    setZoomStyle(getZoomStyle());
+    setViewerImageUrl(imageUrl);
+    setViewerSubtitle(subtitle);
+    setViewerMode(mode);
+    setZoomStyle(getZoomStyle(sourceElement));
     setIsDetailZoomed(false);
     setIsDraggingZoomedImage(false);
     setZoomPan({ x: 0, y: 0 });
@@ -250,6 +439,7 @@ export default function ProductoDetallePage() {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     closeTimerRef.current = window.setTimeout(() => {
       setIsViewerMounted(false);
+      setViewerImageUrl(null);
       setViewerPhase("opening");
       setIsDetailZoomed(false);
       setIsDraggingZoomedImage(false);
@@ -299,18 +489,21 @@ export default function ProductoDetallePage() {
 
   const handleZoomImagePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!isDetailZoomed || !isDraggingZoomedImage) return;
+    const panSensitivity = 1.55;
     const nextX =
-      dragStartRef.current.panX + event.clientX - dragStartRef.current.pointerX;
+      dragStartRef.current.panX +
+      (event.clientX - dragStartRef.current.pointerX) * panSensitivity;
     const nextY =
-      dragStartRef.current.panY + event.clientY - dragStartRef.current.pointerY;
+      dragStartRef.current.panY +
+      (event.clientY - dragStartRef.current.pointerY) * panSensitivity;
     const movedDistance = Math.hypot(
       event.clientX - dragStartRef.current.pointerX,
       event.clientY - dragStartRef.current.pointerY,
     );
     if (movedDistance > 4) dragMovedRef.current = true;
     setZoomPan({
-      x: Math.max(-260, Math.min(260, nextX)),
-      y: Math.max(-260, Math.min(260, nextY)),
+      x: Math.max(-380, Math.min(380, nextX)),
+      y: Math.max(-380, Math.min(380, nextY)),
     });
   };
 
@@ -323,8 +516,8 @@ export default function ProductoDetallePage() {
     if (!isViewerMounted) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeViewer();
-      if (event.key === "ArrowLeft") showPreviousImage();
-      if (event.key === "ArrowRight") showNextImage();
+      if (viewerMode === "gallery" && event.key === "ArrowLeft") showPreviousImage();
+      if (viewerMode === "gallery" && event.key === "ArrowRight") showNextImage();
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
@@ -332,7 +525,7 @@ export default function ProductoDetallePage() {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [closeViewer, isViewerMounted, showNextImage, showPreviousImage]);
+  }, [closeViewer, isViewerMounted, showNextImage, showPreviousImage, viewerMode]);
 
   useEffect(() => {
     return () => {
@@ -342,10 +535,72 @@ export default function ProductoDetallePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f7f1f3]">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner size={32} className="animate-spin text-black/20" />
-          <p className="text-sm font-light text-black/40">Cargando producto...</p>
+      <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#171717] sm:px-10 lg:px-16 xl:px-24">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)] lg:gap-12">
+          <section className="grid gap-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start">
+            <div className="order-2 flex gap-3 overflow-hidden lg:order-1 lg:flex-col">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 min-w-16 flex-1 animate-pulse rounded-sm bg-black/10 sm:h-24 lg:h-auto lg:min-w-0 lg:w-full lg:aspect-[3/4] lg:flex-none"
+                />
+              ))}
+            </div>
+            <div className="order-1 animate-pulse overflow-hidden rounded-sm bg-black/10 aspect-[4/5] min-h-[380px] w-full sm:min-h-[520px] lg:order-2 lg:min-h-[640px]" />
+          </section>
+
+          <section className="animate-pulse">
+            <div className="mx-auto flex max-w-xl flex-col gap-4 lg:mx-0 lg:max-w-none">
+              <div className="h-4 w-24 rounded bg-black/10" />
+              <div className="space-y-3">
+                <div className="h-10 w-full max-w-[28rem] rounded bg-black/10 sm:h-12" />
+                <div className="h-10 w-5/6 rounded bg-black/10 sm:hidden" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-28 rounded bg-black/10" />
+                <div className="h-4 w-16 rounded bg-black/5" />
+              </div>
+              <div className="mt-2 h-px w-full bg-black/10" />
+
+              <div className="mt-2 space-y-3">
+                <div className="h-4 w-28 rounded bg-black/10" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="size-8 rounded-full bg-black/10 sm:size-9" />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-1 space-y-3">
+                <div className="h-4 w-20 rounded bg-black/10" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-9 w-11 rounded-sm border border-black/10 bg-black/5 sm:h-10 sm:w-14"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-1 flex items-end gap-4">
+                <div className="h-4 w-24 rounded bg-black/10" />
+                <div className="h-8 w-28 rounded bg-black/10" />
+              </div>
+
+              <div className="grid gap-3 pt-4 sm:grid-cols-[140px_minmax(0,1fr)]">
+                <div className="h-12 rounded-md bg-black/10" />
+                <div className="h-12 rounded-md bg-black/10" />
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <div className="h-4 w-32 rounded bg-black/10" />
+                <div className="h-4 w-full rounded bg-black/5" />
+                <div className="h-4 w-[92%] rounded bg-black/5" />
+                <div className="h-4 w-4/5 rounded bg-black/5" />
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     );
@@ -355,12 +610,13 @@ export default function ProductoDetallePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f1f3]">
         <div className="flex flex-col items-center gap-4 text-center">
+          <SmileySad size={48} weight="light" className="text-black/25" />
           <p className="text-lg font-light text-black/40">Producto no encontrado</p>
           <Link
             href="/productos"
             className="text-[13px] font-light text-black/60 underline hover:text-black transition-colors"
           >
-            Volver al catálogo
+            Regresar a productos
           </Link>
         </div>
       </main>
@@ -371,15 +627,14 @@ export default function ProductoDetallePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f1f3]">
         <div className="flex flex-col items-center gap-4 text-center">
-          <Warning size={32} weight="light" className="text-black/20" />
+          <SmileySad size={48} weight="light" className="text-black/25" />
           <p className="text-sm font-light text-black/50">{error}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
+          <Link
+            href="/productos"
             className="text-[13px] font-light text-black/60 underline hover:text-black transition-colors"
           >
-            Reintentar
-          </button>
+            Regresar a productos
+          </Link>
         </div>
       </main>
     );
@@ -398,14 +653,18 @@ export default function ProductoDetallePage() {
 
   if (!data || !currentColor) return null;
 
+  const descripcionProducto = data.producto.descripcion?.trim();
+
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#171717] sm:px-10 lg:px-16 xl:px-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.35fr_1fr]">
         <section className="grid gap-3 sm:grid-cols-[1fr_96px]">
           <div
             ref={imageFrameRef}
-            className="group relative aspect-[3/4] max-h-[420px] sm:max-h-none cursor-zoom-in overflow-hidden bg-white"
-            onClick={openViewer}
+            className={`animate-product-image-enter group relative aspect-[3/4] max-h-[420px] overflow-hidden bg-white sm:max-h-none ${
+              activeImageUrl ? "cursor-zoom-in" : ""
+            }`}
+            onClick={activeImageUrl ? () => openViewer() : undefined}
           >
             {activeImageUrl ? (
               <Image
@@ -430,7 +689,7 @@ export default function ProductoDetallePage() {
               </div>
             )}
 
-            {images.length > 1 && (
+            {allImages.length > 1 && (
               <>
                 <button
                   type="button"
@@ -451,14 +710,16 @@ export default function ProductoDetallePage() {
               </>
             )}
 
-            <button
-              type="button"
-              aria-label="Ampliar imagen"
-              onClick={(event) => handleGalleryButtonClick(event, openViewer)}
-              className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
-            >
-              <MagnifyingGlassPlus size={20} weight="regular" />
-            </button>
+            {activeImageUrl && (
+              <button
+                type="button"
+                aria-label="Ampliar imagen"
+                onClick={(event) => handleGalleryButtonClick(event, () => openViewer())}
+                className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
+              >
+                <MagnifyingGlassPlus size={20} weight="regular" />
+              </button>
+            )}
 
             {currentColor.estadoStock === "AGOTADO" && (
               <span className="absolute left-3 top-3 z-10 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
@@ -473,7 +734,8 @@ export default function ProductoDetallePage() {
           </div>
 
           {/* Vertical gallery (desktop) — hidden scrollbar + arrows */}
-          <div className="hidden sm:flex sm:flex-col sm:gap-1" style={{ maxHeight: "620px" }}>
+          {allImages.length > 0 && (
+          <div className="hidden sm:flex sm:flex-col sm:gap-1 animate-product-enter" style={{ animationDelay: "120ms", maxHeight: "620px" }}>
             <button
               type="button"
               aria-label="Desplazar arriba"
@@ -488,12 +750,16 @@ export default function ProductoDetallePage() {
               style={{ scrollbarWidth: "none" }}
             >
               {allImages.map((item) => {
-                const thumbUrl = buildImageUrl(item.img.urlThumb || item.img.url);
+                const thumbUrl = buildImageUrl(item.img.url || item.img.urlThumb);
                 if (!thumbUrl) return null;
                 const isActive = item.colorIndex === selectedColorIndex && item.imageIndex === safeActiveIndex;
+                const galleryKey = getGalleryKey(item.idColor, item.imageIndex);
                 return (
                   <button
-                    key={`v-${item.idColor}-${item.imageIndex}`}
+                    key={`v-${galleryKey}`}
+                    ref={(node) => {
+                      desktopGalleryItemRefs.current[galleryKey] = node;
+                    }}
                     type="button"
                     aria-label={`Ver imagen ${item.colorName}`}
                     onClick={() => {
@@ -528,21 +794,27 @@ export default function ProductoDetallePage() {
               <CaretDown size={12} weight="bold" />
             </button>
           </div>
+          )}
         </section>
 
         {/* Horizontal gallery strip (mobile) — hidden scrollbar + arrows */}
+        {allImages.length > 0 && (
         <div
           ref={mobileGalleryRef}
-          className="flex sm:hidden gap-2 overflow-x-scroll w-full [&::-webkit-scrollbar]:hidden pb-1"
-          style={{ scrollbarWidth: "none" }}
+          className="animate-product-enter flex sm:hidden gap-2 overflow-x-scroll w-full [&::-webkit-scrollbar]:hidden pb-1"
+          style={{ animationDelay: "120ms", scrollbarWidth: "none" }}
         >
             {allImages.map((item) => {
-              const thumbUrl = buildImageUrl(item.img.urlThumb || item.img.url);
+              const thumbUrl = buildImageUrl(item.img.url || item.img.urlThumb);
               if (!thumbUrl) return null;
               const isActive = item.colorIndex === selectedColorIndex && item.imageIndex === safeActiveIndex;
+              const galleryKey = getGalleryKey(item.idColor, item.imageIndex);
               return (
                 <button
-                  key={`h-${item.idColor}-${item.imageIndex}`}
+                  key={`h-${galleryKey}`}
+                  ref={(node) => {
+                    mobileGalleryItemRefs.current[galleryKey] = node;
+                  }}
                   type="button"
                   aria-label={`Ver imagen ${item.colorName}`}
                   onClick={() => {
@@ -552,7 +824,7 @@ export default function ProductoDetallePage() {
                     }
                     setActiveImageIndex(item.imageIndex);
                   }}
-                  className={`relative aspect-[3/4] h-16 shrink-0 overflow-hidden bg-white transition-all ${
+                  className={`relative aspect-[3/4] h-32 shrink-0 overflow-hidden bg-white transition-all ${
                     isActive ? "ring-1 ring-black" : "opacity-50"
                   }`}
                 >
@@ -568,24 +840,18 @@ export default function ProductoDetallePage() {
               );
             })}
           </div>
+        )}
 
         <section className="pt-2 lg:pl-10">
-          <nav className="mb-6 flex items-center gap-2 text-[10px] font-light uppercase tracking-widest text-black/50">
-            <Link href="/" className="transition-colors hover:text-black">Inicio</Link>
-            <span>/</span>
-            <Link href="/productos" className="transition-colors hover:text-black">{data.producto.categoria.nombre}</Link>
-            <span>/</span>
-            <span className="text-black">{data.producto.nombre}</span>
-          </nav>
-          <h1 className="mt-2 text-3xl font-semibold uppercase leading-tight">
+          <h1 className="animate-product-enter mt-2 text-3xl font-semibold uppercase leading-tight" style={{ animationDelay: "80ms" }}>
             {data.producto.nombre}
           </h1>
 
           {currentVariant && (
-            <p className="mt-5 text-[11px] font-light uppercase">SKU: {currentVariant.sku}</p>
+            <p className="animate-product-enter mt-5 text-[11px] font-light uppercase" style={{ animationDelay: "140ms" }}>SKU: {currentVariant.sku}</p>
           )}
 
-          <div className="mt-5">
+          <div className="animate-product-enter mt-5" style={{ animationDelay: "180ms" }}>
             {hasOffer ? (
               <div className="flex items-baseline gap-3">
                 <span className="text-xl font-semibold text-red-700">
@@ -603,7 +869,7 @@ export default function ProductoDetallePage() {
             )}
           </div>
 
-          <div className="mt-7">
+          <div className="animate-product-enter mt-7" style={{ animationDelay: "220ms" }}>
             <p className="text-sm font-semibold">
               Color: <span className="font-light">{currentColor.color.nombre}</span>
             </p>
@@ -612,84 +878,54 @@ export default function ProductoDetallePage() {
                 const isSelected = index === selectedColorIndex;
                 const isSoldOut = cd.estadoStock === "AGOTADO";
                 return (
-                  <button
-                    key={cd.color.idColor}
-                    type="button"
+                  <span key={cd.color.idColor} className="color-tooltip">
+                    <button
+                      type="button"
                     aria-label={`Elegir color ${cd.color.nombre}`}
                     onClick={() => {
                       setSelectedColorIndex(index);
                       setSelectedSize(null);
+                      setSelectedQuantity(1);
                       setActiveImageIndex(0);
+                      window.requestAnimationFrame(() => scrollToColorImage(index));
                     }}
                     className={`relative size-9 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all ${
                       isSelected ? "ring-2 ring-black/70 ring-offset-2 scale-110" : ""
-                    } ${isSoldOut ? "opacity-40" : ""}`}
+                    }`}
                     style={{ backgroundColor: cd.color.hex }}
                     title={`${cd.color.nombre}${isSoldOut ? " (Agotado)" : ""} — S/ ${cd.precioMinimo.toFixed(2)}${cd.precioMinimo !== cd.precioMaximo ? ` - S/ ${cd.precioMaximo.toFixed(2)}` : ""}`}
-                  >
-                    {isSoldOut && (
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="w-[60%] h-px bg-white/60 rotate-45" />
-                      </span>
-                    )}
-                  </button>
+                  />
+                    <span className={`color-tooltip-bubble ${isSoldOut ? "color-tooltip-bubble--sold-out" : ""}`}>
+                      {cd.color.nombre}{isSoldOut ? " · Agotado" : ""}
+                    </span>
+                  </span>
                 );
               })}
             </div>
           </div>
 
-          <div className="mt-7">
+          <div className="animate-product-enter mt-7" style={{ animationDelay: "260ms" }}>
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-semibold">
                 Talla{selectedSize ? ` · ${selectedSize}` : ""}
               </p>
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex h-9 items-center justify-center rounded-md border border-black/15 bg-white px-4 text-[10px] font-light uppercase tracking-[0.06em] text-black transition-colors hover:border-black"
-                  >
-                    Guia de tallas
-                  </button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader className="border-b border-black/10">
-                    <DrawerTitle>Guia de tallas</DrawerTitle>
-                    <DrawerDescription>
-                      Medidas en centímetros. Toma tus medidas y compara con la tabla.
-                    </DrawerDescription>
-                  </DrawerHeader>
-                  <div className="overflow-x-auto px-6 py-6">
-                    <table className="w-full text-left text-sm font-light">
-                      <thead>
-                        <tr className="border-b border-black/10 text-[11px] font-medium uppercase tracking-wider text-black/50">
-                          <th className="pb-3 pr-4">Talla</th>
-                          <th className="pb-3 pr-4">Busto</th>
-                          <th className="pb-3 pr-4">Cintura</th>
-                          <th className="pb-3">Cadera</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sizeGuideData.map((row) => (
-                          <tr key={row.talla} className="border-b border-black/5">
-                            <td className="py-3 pr-4 font-medium text-black">{row.talla}</td>
-                            <td className="py-3 pr-4 text-black/70">{row.busto}</td>
-                            <td className="py-3 pr-4 text-black/70">{row.cintura}</td>
-                            <td className="py-3 text-black/70">{row.cadera}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <DrawerFooter className="border-t border-black/10">
-                    <DrawerClose asChild>
-                      <button className="h-12 w-full bg-black text-sm font-light uppercase tracking-widest text-white transition-colors hover:bg-black/80">
-                        Entendido
-                      </button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
+              {sizeGuideImageUrl ? (
+                <button
+                  ref={sizeGuideButtonRef}
+                  type="button"
+                  onClick={() =>
+                    openViewer(
+                      sizeGuideButtonRef.current,
+                      sizeGuideImageUrl,
+                      "Guia de tallas",
+                      "size-guide",
+                    )
+                  }
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-black/15 bg-white px-4 text-[10px] font-light uppercase tracking-[0.06em] text-black transition-colors hover:border-black"
+                >
+                  Guia de tallas
+                </button>
+              ) : null}
             </div>
             <div className="mt-3 flex gap-3">
               {variants.map((v) => (
@@ -697,7 +933,10 @@ export default function ProductoDetallePage() {
                   key={v.idProductoVariante}
                   type="button"
                   disabled={!v.disponible}
-                  onClick={() => setSelectedSize(v.talla.nombre)}
+                  onClick={() => {
+                    setSelectedSize(v.talla.nombre);
+                    setSelectedQuantity(1);
+                  }}
                   className={`relative flex size-12 overflow-hidden items-center justify-center rounded-md border text-sm font-light transition-colors ${
                     !v.disponible
                       ? "border-black/10 bg-gray-50 text-black/30 cursor-not-allowed"
@@ -730,33 +969,97 @@ export default function ProductoDetallePage() {
             )}
           </div>
 
-          <button
-            type="button"
-            disabled={!selectedSize || currentColor.estadoStock === "AGOTADO"}
-            className="mt-8 flex h-14 w-full items-center justify-center bg-[#181516] text-sm font-light uppercase tracking-[0.04em] text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:bg-black/25"
-          >
-            {currentColor.estadoStock === "AGOTADO"
-              ? "Agotado"
-              : !selectedSize
-              ? "Elige una talla"
-              : "Añadir al carrito"}
-          </button>
+          <div className="animate-product-enter mt-8 flex gap-3" style={{ animationDelay: "300ms" }}>
+            <div className="grid h-14 w-[126px] shrink-0 grid-cols-3 border border-[#e8e1dc] bg-white text-sm text-black">
+              <button
+                type="button"
+                aria-label="Disminuir cantidad"
+                disabled={!currentVariant || selectedQuantity <= 1 || addButtonState === "loading"}
+                onClick={() => setSelectedQuantity((quantity) => Math.max(1, quantity - 1))}
+                className="flex items-center justify-center text-xl font-light transition-colors hover:bg-[#f8f3ef] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                -
+              </button>
+              <span className="flex items-center justify-center font-light">
+                {selectedQuantity}
+              </span>
+              <button
+                type="button"
+                aria-label="Aumentar cantidad"
+                disabled={
+                  !currentVariant ||
+                  !currentVariant.disponible ||
+                  selectedQuantity >= maxQuantity ||
+                  addButtonState === "loading"
+                }
+                onClick={() => setSelectedQuantity((quantity) => Math.min(maxQuantity, quantity + 1))}
+                className="flex items-center justify-center text-xl font-light transition-colors hover:bg-[#f8f3ef] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                +
+              </button>
+            </div>
 
-          {data.producto.descripcion && (
-            <div className="mt-5 bg-white">
+            <button
+              ref={addButtonRef}
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!currentVariant || !currentVariant.disponible || addButtonState === "loading"}
+              className="flex h-14 flex-1 items-center justify-center gap-2 bg-[#181516] px-4 text-sm font-semibold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:bg-black/25"
+            >
+              {addButtonState === "loading" ? (
+                <>
+                  <Spinner size={18} className="animate-spin" />
+                  Agregando
+                </>
+              ) : addButtonState === "success" && addedCurrentVariant ? (
+                <>
+                  <CheckCircle size={18} weight="fill" />
+                  Añadido
+                </>
+              ) : (
+                <>
+                  <BasketIcon size={18} weight="fill" />
+                  {currentColor.estadoStock === "AGOTADO"
+                    ? "Agotado"
+                    : !currentVariant
+                    ? "Elige una talla"
+                    : "Agregar al carrito"}
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="animate-product-enter mt-5 space-y-3 border-y border-black/10 py-4 text-[13px] font-light text-black" style={{ animationDelay: "340ms" }}>
+            <div className="flex items-center gap-3">
+              <Truck size={20} weight="fill"  className="text-black" />
+              <span>Envios a todo el Perú</span>
+            </div>
+          </div>
+
+          {descripcionProducto && (
+            <div className="animate-product-enter mt-5 bg-white" style={{ animationDelay: "380ms" }}>
               <button className="flex w-full items-center justify-between border-b border-black/10 px-3 py-2 text-left text-sm font-light">
                 Descripción
                 <CaretUp size={14} weight="light" />
               </button>
               <div className="px-8 py-4 text-xs font-light leading-6 text-black/75">
-                {data.producto.descripcion}
+                {descripcionProducto}
               </div>
             </div>
           )}
         </section>
       </div>
 
-      {isViewerMounted && activeImageUrl ? (
+      {data.recomendados.length > 0 && (
+        <section className="mt-20 bg-white px-6 py-10 text-[#242424]">
+          <h2 className="mb-8 text-center text-lg font-light uppercase tracking-[0.12em] text-black">
+            Productos que te pueden gustar
+          </h2>
+          <ProductCarousel items={data.recomendados} />
+        </section>
+      )}
+
+      {isViewerMounted && viewerImageUrl ? (
         <div
           aria-modal="true"
           aria-label="Vista ampliada del producto"
@@ -773,6 +1076,15 @@ export default function ProductoDetallePage() {
           >
             <X size={20} weight="regular" />
           </button>
+
+          <div className="absolute left-5 top-5 z-10 max-w-[calc(100%-5.5rem)]">
+            <p className="mt-1 text-sm font-light uppercase tracking-[0.08em] text-black sm:text-base">
+              {data.producto.nombre}
+            </p>
+            <p className="mt-1 text-[10px] font-light uppercase tracking-[0.18em] text-black/45">
+              {viewerSubtitle}
+            </p>
+          </div>
 
           <div
             className="product-viewer-stage flex min-h-0 flex-1 items-center justify-center px-4 py-10 sm:px-12"
@@ -794,7 +1106,7 @@ export default function ProductoDetallePage() {
               style={zoomStyle}
             >
               <Image
-                src={activeImageUrl}
+                src={viewerImageUrl}
                 alt={`${data.producto.nombre} ampliado`}
                 width={1600}
                 height={2000}
@@ -815,14 +1127,16 @@ export default function ProductoDetallePage() {
           </div>
 
           <div className="flex items-center justify-center gap-4 px-6 pb-8">
-            <button
-              type="button"
-              aria-label="Imagen anterior"
-              onClick={showPreviousImage}
-              className="flex size-11 items-center justify-center rounded-full border border-black/10 bg-white text-black transition-colors hover:border-black"
-            >
-              <CaretLeft size={18} weight="bold" />
-            </button>
+            {viewerMode === "gallery" ? (
+              <button
+                type="button"
+                aria-label="Imagen anterior"
+                onClick={showPreviousImage}
+                className="flex size-11 items-center justify-center rounded-full border border-black/10 bg-white text-black transition-colors hover:border-black"
+              >
+                <CaretLeft size={18} weight="bold" />
+              </button>
+            ) : null}
             <button
               type="button"
               aria-label="Cerrar vista ampliada"
@@ -831,37 +1145,40 @@ export default function ProductoDetallePage() {
             >
               <X size={18} weight="regular" />
             </button>
-            <button
-              type="button"
-              aria-label="Imagen siguiente"
-              onClick={showNextImage}
-              className="flex size-11 items-center justify-center rounded-full border border-black/10 bg-white text-black transition-colors hover:border-black"
-            >
-              <CaretRight size={18} weight="bold" />
-            </button>
+            {viewerMode === "gallery" ? (
+              <button
+                type="button"
+                aria-label="Imagen siguiente"
+                onClick={showNextImage}
+                className="flex size-11 items-center justify-center rounded-full border border-black/10 bg-white text-black transition-colors hover:border-black"
+              >
+                <CaretRight size={18} weight="bold" />
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white px-5 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] lg:hidden">
-        <div className="flex items-center justify-between gap-6">
-          <div>
-            <p className="text-[11px] font-light uppercase tracking-widest text-black/60">{data.producto.nombre}</p>
-            <p className="text-sm font-semibold text-black mt-0.5">{displayPrice}</p>
+      {cartNotice && (
+        <div className="cart-alert fixed left-4 right-4 top-14 z-[70] mx-auto border border-black/10 bg-white px-4 py-3 text-black shadow-[0_12px_32px_rgba(0,0,0,0.12)] sm:top-16 sm:left-1/2 sm:right-auto sm:w-[420px] sm:-translate-x-1/2 lg:left-auto lg:right-6 lg:top-24 lg:w-[360px] lg:translate-x-0">
+          <div className="flex items-start gap-3">
+            {cartNotice.type === "success" ? (
+              <CheckCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-green-600" />
+            ) : (
+              <XCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-red-600" />
+            )}
+            <div className="min-w-0">
+              <p className="text-[12px] font-medium uppercase tracking-[0.08em]">
+                {cartNotice.title}
+              </p>
+              <p className="mt-1 truncate text-[13px] font-light text-black/60">
+                {cartNotice.productName} · {cartNotice.detail}
+              </p>
+            </div>
           </div>
-          <button
-            type="button"
-            disabled={!selectedSize || currentColor.estadoStock === "AGOTADO"}
-            className="flex h-[46px] flex-1 items-center justify-center rounded bg-black px-6 text-[13px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/25"
-          >
-            {currentColor.estadoStock === "AGOTADO"
-              ? "Agotado"
-              : !selectedSize
-              ? "Elige talla"
-              : "Añadir"}
-          </button>
         </div>
-      </div>
+      )}
+
     </main>
   );
 }

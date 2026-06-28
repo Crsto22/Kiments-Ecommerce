@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
 import { PageLoader } from "@/components/PageLoader";
 import { Navbar } from "@/components/Navbar";
+import { CartProvider } from "@/components/CartProvider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -34,10 +35,12 @@ export default function RootLayout({
       className={`${poppins.variable} ${kiments.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#111318] text-white">
-        <PageLoader />
-        <Navbar />
-        {children}
-        <Footer />
+        <CartProvider>
+          <PageLoader />
+          <Navbar />
+          {children}
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

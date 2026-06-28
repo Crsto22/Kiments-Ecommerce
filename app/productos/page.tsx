@@ -20,16 +20,14 @@ import {
   Eye,
   GridFour,
   Rows,
-  ShoppingCartSimple,
   SlidersHorizontal,
   X,
   Warning,
-  Spinner,
   Storefront,
 } from "@phosphor-icons/react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { fetchProductos, buildImageUrl } from "@/lib/api";
-import type { ProductoItem, VarianteProducto } from "@/types/producto";
+import type { ProductoItem } from "@/types/producto";
 
 type ViewMode = "compact" | "normal" | "wide";
 
@@ -73,13 +71,10 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
       ? `S/ ${priceMin.toFixed(2)}`
       : `S/ ${priceMin.toFixed(2)} - S/ ${priceMax.toFixed(2)}`;
 
-  const rawImage =
-    item.imagenPrincipal?.url ||
-    item.imagenPrincipal?.urlThumb ||
-    item.producto.imagenGlobalUrl ||
-    item.producto.imagenGlobalThumbUrl;
-
-  const imageUrl = buildImageUrl(rawImage);
+  const imageUrl =
+    item.imagenPrincipal?.origen === "COLOR"
+      ? buildImageUrl(item.imagenPrincipal.url || item.imagenPrincipal.urlThumb)
+      : null;
 
   return {
     idProducto: item.producto.idProducto,
@@ -412,9 +407,16 @@ export default function ProductosPage() {
               <div
                 className={`grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-20 sm:gap-y-14 sm:grid-cols-2 ${gridColumns}`}
               >
-                {filteredProducts.map((product) => (
-                  <article key={`${product.idProducto}-${product.idColor}`}>
-                    <div className="group relative aspect-[3/4] overflow-hidden bg-white">
+                {filteredProducts.map((product, index) => (
+                  <article
+                    key={`${product.idProducto}-${product.idColor}`}
+                    className="animate-product-enter"
+                    style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+                  >
+                    <div
+                      className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden bg-white"
+                      style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+                    >
                       {product.hasImage ? (
                         <ProductImage src={product.image!} alt={product.name} />
                       ) : (
@@ -433,13 +435,6 @@ export default function ProductosPage() {
                         >
                           <Eye size={18} weight="regular" />
                         </Link>
-                        <button
-                          type="button"
-                          aria-label="Agregar al carrito"
-                          className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-                        >
-                          <ShoppingCartSimple size={18} weight="regular" />
-                        </button>
                       </div>
                       {product.estadoStock === "AGOTADO" && (
                         <span className="absolute left-0 top-4 z-20 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
@@ -462,11 +457,14 @@ export default function ProductosPage() {
 
                       {/* Color swatch */}
                       <div className="mt-2 flex items-center gap-2">
-                        <span
-                          aria-label={`Color: ${product.colorName}`}
-                          className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.28)] shrink-0"
-                          style={{ backgroundColor: product.colorHex }}
-                        />
+                        <span className="color-tooltip shrink-0">
+                          <span
+                            aria-label={`Color: ${product.colorName}`}
+                            className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
+                            style={{ backgroundColor: product.colorHex }}
+                          />
+                          <span className="color-tooltip-bubble">{product.colorName}</span>
+                        </span>
                         <span className="text-[11px] font-light text-black/50 uppercase">
                           {product.colorName}
                         </span>

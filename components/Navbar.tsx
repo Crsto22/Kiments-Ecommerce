@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
+  Basket as BasketIcon,
   List,
   MagnifyingGlass,
-  ShoppingCartSimple,
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import {
@@ -20,6 +20,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { CartContent } from "@/components/CartContent";
+import { useCart } from "@/components/CartProvider";
+import { buildImageUrl, fetchProductos } from "@/lib/api";
+import type { ProductoItem } from "@/types/producto";
 
 const navItems = [
   { label: "INICIO", href: "/" },
@@ -29,8 +32,13 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { count } = useCart();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<ProductoItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const isHome = pathname === "/";
 
@@ -62,21 +70,67 @@ export function Navbar() {
     }
   }, [isSearchOpen]);
 
-  if (pathname === "/pago") {
+  useEffect(() => {
+    const term = searchTerm.trim();
+    if (!isSearchOpen || term.length < 2) {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      fetchProductos({ q: term, size: 6, soloDisponibles: false })
+        .then((response) => {
+          if (!cancelled) setSearchResults(response.content);
+        })
+        .catch(() => {
+          if (!cancelled) setSearchResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setIsSearching(false);
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isSearchOpen, searchTerm]);
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchTerm("");
+    setSearchResults([]);
+    setIsSearching(false);
+  };
+
+  const goToResult = (item: ProductoItem) => {
+    closeSearch();
+    router.push(`/productos/${item.producto.slug}?color=${item.color.idColor}`);
+  };
+
+  const updateSearchTerm = (value: string) => {
+    setSearchTerm(value);
+    const canSearch = value.trim().length >= 2;
+    setIsSearching(canSearch);
+    if (!canSearch) setSearchResults([]);
+  };
+
+  if (pathname === "/pago" || pathname === "/carrito") {
     return null;
   }
 
-  const isLightOnHero = isHome && !isScrolled;
-  const navText = isLightOnHero
+  const isOverHero = isHome && !isScrolled;
+  const navText = isOverHero
     ? "text-white/90 hover:text-white"
     : "text-black/90 hover:text-black";
-  const brandText = isLightOnHero ? "text-white" : "text-black";
-  const iconText = isLightOnHero
+  const brandText = isOverHero ? "text-white" : "text-black";
+  const iconText = isOverHero
     ? "text-white hover:text-white/75"
     : "text-black hover:text-black/70";
-  const headerBackground = isLightOnHero
-    ? "bg-transparent"
-    : "bg-white shadow-[0_1px_12px_rgba(0,0,0,0.06)]";
+  const headerBackground =
+    isHome && !isScrolled
+      ? "bg-transparent"
+      : "bg-white shadow-[0_1px_12px_rgba(0,0,0,0.06)]";
 
   return (
     <header
@@ -87,7 +141,7 @@ export function Navbar() {
       <button
         type="button"
         aria-label="Cerrar busqueda"
-        onClick={() => setIsSearchOpen(false)}
+        onClick={closeSearch}
         className={`fixed inset-x-0 bottom-0 top-12 bg-black/45 transition-opacity duration-300 sm:top-14 xl:top-16 ${
           isSearchOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -104,7 +158,7 @@ export function Navbar() {
             href="/"
             aria-label="KIMENTS inicio"
             className="hidden sm:flex min-w-[96px] flex-col items-center leading-none text-black"
-            onClick={() => setIsSearchOpen(false)}
+            onClick={closeSearch}
           >
             <span className="font-[family-name:var(--font-kiments)] text-[20px] font-normal tracking-[0.14em] sm:text-[24px]">
               KIMENTS
@@ -114,32 +168,57 @@ export function Navbar() {
             </span>
           </Link>
 
+          <div className="relative mx-auto w-full sm:max-w-xl">
             <form
-            className="mx-auto flex h-9 w-full sm:max-w-xl items-center border border-black bg-white px-3 text-black"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <input
-              ref={searchInputRef}
-              type="search"
-              aria-label="Buscar productos"
-              placeholder="Buscar Productos"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  setIsSearchOpen(false);
-                }
+              className="flex h-9 w-full items-center border border-black bg-white px-3 text-black"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (searchResults[0]) goToResult(searchResults[0]);
               }}
-              className="h-full min-w-0 flex-1 bg-transparent text-sm font-light outline-none placeholder:text-black/45"
-            />
-            <button
-              type="submit"
-              aria-label="Buscar"
-              className="flex size-7 items-center justify-center text-black"
             >
-              <MagnifyingGlass size={19} weight="regular" />
-            </button>
-          </form>
+              <input
+                ref={searchInputRef}
+                type="search"
+                aria-label="Buscar productos"
+                placeholder="Buscar Productos"
+                value={searchTerm}
+                onChange={(event) => updateSearchTerm(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    closeSearch();
+                  }
+                }}
+                className="h-full min-w-0 flex-1 bg-transparent text-sm font-light outline-none placeholder:text-black/45"
+              />
+              <button
+                type="submit"
+                aria-label="Buscar"
+                className="flex size-7 items-center justify-center text-black"
+              >
+                <MagnifyingGlass size={19} weight="regular" />
+              </button>
+            </form>
 
-          <CartDrawer triggerClassName="text-black hover:text-black/70" />
+            {searchTerm.trim().length >= 2 && (
+              <div className="absolute left-0 right-0 top-full mt-2 max-h-[70vh] overflow-y-auto border border-black/10 bg-white shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
+                {isSearching ? (
+                  <div className="px-4 py-4 text-sm font-light text-black/55">Buscando...</div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((item) => (
+                    <SearchResult
+                      key={`${item.producto.idProducto}-${item.color.idColor}`}
+                      item={item}
+                      onSelect={() => goToResult(item)}
+                    />
+                  ))
+                ) : (
+                  <div className="px-4 py-4 text-sm font-light text-black/55">Sin resultados</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <CartDrawer count={count} triggerClassName="text-black hover:text-black/70" />
         </div>
       </div>
 
@@ -185,21 +264,25 @@ export function Navbar() {
             aria-label="Abrir busqueda"
             aria-expanded={isSearchOpen}
             onClick={() => setIsSearchOpen(true)}
-            className={`rounded-sm transition-colors ${iconText}`}
+            className={`flex size-9 items-center justify-center rounded-sm transition-colors ${iconText}`}
           >
-            <MagnifyingGlass size={23} weight="thin" />
+            <MagnifyingGlass size={24} weight="thin" />
           </button>
 
           <Link
             href="/carrito"
             aria-label="Carrito"
-            className={`rounded-sm transition-colors lg:hidden ${iconText}`}
+            data-cart-target
+            className={`flex size-9 items-center justify-center rounded-sm transition-colors lg:hidden ${iconText}`}
           >
-            <ShoppingCartSimple size={24} weight="thin" />
+            <span className="relative flex items-center justify-center">
+              <BasketIcon size={24} weight="thin" />
+              <CartCountBadge count={count} />
+            </span>
           </Link>
 
           <div className="hidden lg:block">
-            <CartDrawer triggerClassName={iconText} />
+            <CartDrawer count={count} triggerClassName={iconText} />
           </div>
         </div>
       </nav>
@@ -207,16 +290,81 @@ export function Navbar() {
   );
 }
 
-function CartDrawer({ triggerClassName }: Readonly<{ triggerClassName: string }>) {
+function SearchResult({
+  item,
+  onSelect,
+}: Readonly<{ item: ProductoItem; onSelect: () => void }>) {
+  const imageUrl =
+    item.imagenPrincipal?.origen === "COLOR"
+      ? buildImageUrl(item.imagenPrincipal.url || item.imagenPrincipal.urlThumb)
+      : null;
+  const price =
+    item.precioMinimo === item.precioMaximo
+      ? `S/ ${item.precioMinimo.toFixed(2)}`
+      : `S/ ${item.precioMinimo.toFixed(2)} - S/ ${item.precioMaximo.toFixed(2)}`;
+  const sizes = item.variantes.map((variante) => variante.talla.nombre).join(", ");
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-3 border-b border-black/10 px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-black/[0.03]"
+    >
+      <span className="relative block size-14 overflow-hidden bg-neutral-100">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={`${item.producto.nombre} ${item.color.nombre}`}
+            className="h-full w-full object-cover"
+          />
+        ) : null}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-normal text-black">
+          {item.producto.nombre}
+        </span>
+        <span className="mt-1 flex items-center gap-2 text-xs font-light text-black/60">
+          <span
+            className="size-3 shrink-0 rounded-full border border-black/15"
+            style={{ backgroundColor: item.color.hex || "#fff" }}
+          />
+          <span className="truncate">{item.color.nombre}</span>
+          {sizes ? <span className="truncate">Tallas: {sizes}</span> : null}
+        </span>
+      </span>
+      <span className="text-right text-xs font-medium text-black">{price}</span>
+    </button>
+  );
+}
+
+function CartCountBadge({ count }: Readonly<{ count: number }>) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="absolute -right-2 -top-2 flex min-w-4 items-center justify-center rounded-full bg-black px-1 text-[9px] font-medium leading-4 text-white ring-1 ring-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function CartDrawer({
+  count,
+  triggerClassName,
+}: Readonly<{ count: number; triggerClassName: string }>) {
   return (
     <Drawer direction="right">
       <DrawerTrigger asChild>
         <button
           type="button"
           aria-label="Abrir carrito"
-          className={`rounded-sm transition-colors ${triggerClassName}`}
+          data-cart-target
+          className={`flex size-9 items-center justify-center rounded-sm transition-colors ${triggerClassName}`}
         >
-          <ShoppingCartSimple size={24} weight="thin" />
+          <span className="relative flex items-center justify-center">
+            <BasketIcon size={24} weight="thin" />
+            <CartCountBadge count={count} />
+          </span>
         </button>
       </DrawerTrigger>
       <DrawerContent className="flex flex-col">

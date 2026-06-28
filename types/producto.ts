@@ -55,6 +55,8 @@ export interface ProductoInfo {
   categoria: Categoria;
   imagenGlobalUrl: string | null;
   imagenGlobalThumbUrl: string | null;
+  guiaTallasUrl: string | null;
+  guiaTallasThumbUrl: string | null;
 }
 
 export interface ProductoItem {
@@ -107,13 +109,34 @@ export interface ProductoDetalleResponse {
   tiendaConfigurada: boolean;
   producto: ProductoInfo;
   colores: ColorDetalle[];
+  recomendados: ProductoItem[];
 }
 
 // --- Inicio (GET /inicio) ---
 
 export interface EcommerceInicioResponse {
   tiendaConfigurada: boolean;
+  portadas: EcommercePortada[];
+  imagenesProductos: EcommerceInicioImagenProducto[];
   aleatorios: ProductoItem[];
   masVendidos: ProductoItem[];
+}
+
+export interface EcommerceInicioImagenProducto {
+  idProducto: number;
+  nombre: string;
+  slug: string;
+  imagenUrl: string | null;
+  imagenThumbUrl: string | null;
+}
+
+export interface EcommercePortada {
+  idEcommercePortada: number;
+  desktopUrl: string;
+  desktopThumbUrl: string | null;
+  mobileUrl: string;
+  mobileThumbUrl: string | null;
+  orden: number;
+  estado: "ACTIVO" | "INACTIVO";
 }
 
