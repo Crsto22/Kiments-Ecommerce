@@ -1,0 +1,25 @@
+{
+  "name": "KIMENTS",
+  "short_name": "KIMENTS",
+  "description": "Tienda de ropa KIMENTS",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111318",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/img/pwa/logo_pwa.png",
+      "sizes": "1000x1000",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/pwa/logo_pwa.png",
+      "sizes": "1000x1000",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -63,7 +63,7 @@ export default function TerminosYCondicionesPage() {
                 Todos los precios indicados en nuestro sitio web incluyen los impuestos correspondientes vigentes en Perú, salvo que se indique lo contrario. Los costos de envío se calculan de manera independiente al finalizar la compra.
               </p>
               <p>
-                Aceptamos los principales métodos de pago, incluyendo tarjetas de crédito, débito y transferencias bancarias a través de plataformas de pago seguras y encriptadas. Tu información financiera nunca es almacenada en nuestros servidores.
+                Aceptamos como métodos de pago únicamente transferencias bancarias directas y Yape. Todo el proceso es seguro y tu información financiera no es almacenada en nuestros servidores.
               </p>
             </div>
           </div>
@@ -86,22 +86,7 @@ export default function TerminosYCondicionesPage() {
           {/* Section 4 */}
           <div>
             <h2 className="text-xl font-medium tracking-[0.08em] text-black mb-6">
-              04. CAMBIOS Y DEVOLUCIONES
-            </h2>
-            <div className="space-y-4 text-sm font-light leading-relaxed text-black/75 sm:text-base">
-              <p>
-                Queremos que estés completamente satisfecho con tus prendas. Aceptamos cambios dentro de los 7 días calendario posteriores a la recepción del producto, siempre y cuando las prendas no hayan sido usadas, lavadas y conserven sus etiquetas originales.
-              </p>
-              <p>
-                Por razones de higiene, no se aceptan devoluciones de accesorios, trajes de baño o prendas íntimas, salvo por defecto de fábrica comprobado.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 5 */}
-          <div>
-            <h2 className="text-xl font-medium tracking-[0.08em] text-black mb-6">
-              05. PRIVACIDAD DE DATOS
+              04. PRIVACIDAD DE DATOS
             </h2>
             <div className="space-y-4 text-sm font-light leading-relaxed text-black/75 sm:text-base">
               <p>
@@ -116,7 +101,7 @@ export default function TerminosYCondicionesPage() {
         <div className="mx-auto mt-24 max-w-3xl border-t border-black/10 pt-12 text-center">
           <p className="text-sm font-light text-black/60">
             ¿Tienes alguna duda adicional sobre nuestras políticas? <br className="sm:hidden" />
-            Escríbenos a <a href="mailto:contacto@kiments.com" className="text-black font-medium border-b border-black/20 hover:border-black transition-colors pb-0.5">contacto@kiments.com</a>
+            Escríbenos a nuestro WhatsApp al <a href="https://wa.me/51933918047" target="_blank" rel="noopener noreferrer" className="text-black font-medium border-b border-black/20 hover:border-black transition-colors pb-0.5">+51 933918047</a>
           </p>
         </div>
       </section>
@@ -137,7 +122,7 @@ export default function TerminosYCondicionesPage() {
             CONTINUAR EXPLORANDO
           </h2>
           <Link
-            href="/categorias"
+            href="/productos"
             className="group mt-10 inline-flex h-[52px] items-center justify-center bg-white px-12 text-[11px] font-light uppercase tracking-[0.14em] text-black transition-colors hover:bg-[#e0e0e0]"
           >
             Ir a la tienda

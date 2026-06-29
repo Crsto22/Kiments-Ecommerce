@@ -15,19 +15,23 @@ import {
 const instagramPosts = [
   {
     image: "/img/instagram/img1.jpg",
-    href: "https://www.instagram.com/p/DY-DZKgjohp/?img_index=1",
+    href: "https://www.instagram.com/kiments.pe/p/DYDCdUVn7Iv/",
   },
   {
     image: "/img/instagram/img2.jpg",
-    href: "https://www.instagram.com/p/DYp5gnsOPfJ/",
+    href: "https://www.instagram.com/kiments.pe/p/DYaTUoXHxMI/",
   },
   {
     image: "/img/instagram/img3.jpg",
-    href: "https://www.instagram.com/p/DYaTUoXHxMI/?img_index=1",
+    href: "https://www.instagram.com/kiments.pe/p/DYp5gnsOPfJ/",
   },
   {
     image: "/img/instagram/img4.jpg",
-    href: "https://www.instagram.com/p/DYDCdUVn7Iv/?img_index=1",
+    href: "https://www.instagram.com/kiments.pe/p/DY-DZKgjohp/",
+  },
+  {
+    image: "/img/instagram/img5.jpg",
+    href: "https://www.instagram.com/p/DaD_r82H8wq/?img_index=1",
   },
 ];
 
@@ -37,12 +41,13 @@ export function InstagramCarousel() {
       <div className="mx-auto mb-8 max-w-7xl px-7 sm:px-10 lg:px-16 xl:px-20">
         <div className="border-y border-[#eeeeee] py-8 text-center">
           <Link
-            href="https://www.instagram.com/kiments.pe"
+            href="https://www.instagram.com/kiments.pe/"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-11 items-center justify-center border border-[#2c2c2c] px-8 text-[13px] font-light uppercase tracking-[0.14em] text-[#333333] transition-colors hover:bg-[#333333] hover:text-white"
+            className="inline-flex h-11 items-center justify-center gap-2.5 border border-[#2c2c2c] px-8 text-[13px] font-light uppercase tracking-[0.14em] text-[#333333] transition-colors hover:bg-[#333333] hover:text-white"
           >
-            KIMENTS.PE
+            <InstagramLogo size={18} weight="regular" />
+            @KIMENTS.PE
           </Link>
         </div>
       </div>

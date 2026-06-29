@@ -19,30 +19,30 @@ const frequentLinks = [
 ];
 
 const socialLinks = [
-  { label: "Facebook", href: "https://facebook.com", icon: FacebookLogo },
-  { label: "Instagram", href: "https://instagram.com", icon: InstagramLogo },
-  { label: "TikTok", href: "https://tiktok.com", icon: TiktokLogo },
+  { label: "Facebook", href: "https://www.facebook.com/KIMENTS1/", icon: FacebookLogo },
+  { label: "Instagram", href: "https://www.instagram.com/kiments.pe/?hl=es", icon: InstagramLogo },
+  { label: "TikTok", href: "https://www.tiktok.com/@kiments", icon: TiktokLogo },
 ];
 
 const contactItems = [
   {
     icon: MapPin,
-    text: "Calle San Martin 456\nMiraflores, Lima",
+    text: "Jr. Huánuco 1705-1707\nLa Victoria 15018, Peru",
   },
   {
     icon: Phone,
-    text: "+51 987 654 321",
+    text: "+51 933918047",
   },
   {
     icon: EnvelopeSimple,
-    text: "contacto@kiments.com",
+    text: "[Próximamente...]",
   },
 ];
 
 export function Footer() {
   const pathname = usePathname();
 
-  if (pathname === "/pago") {
+  if (pathname === "/pago" || pathname === "/carrito") {
     return null;
   }
 
