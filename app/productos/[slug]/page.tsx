@@ -102,31 +102,43 @@ export default function ProductoDetallePage() {
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
-    setError(null);
-    setNotFound(false);
-    setSelectedColorIndex(0);
-    setSelectedSize(null);
-    setActiveImageIndex(0);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      setNotFound(false);
+      setSelectedColorIndex(0);
+      setSelectedSize(null);
+      setActiveImageIndex(0);
 
-    fetchProductoBySlug(slug)
-      .then((res) => {
-        setData(res);
-        setSelectedQuantity(1);
-        const colorId = colorParam ? Number(colorParam) : null;
-        if (colorId && res.colores.length > 0) {
-          const index = res.colores.findIndex((c) => c.color.idColor === colorId);
-          if (index >= 0) setSelectedColorIndex(index);
-        }
-      })
-      .catch((err) => {
-        if (err instanceof Error && err.message.includes("404")) {
-          setNotFound(true);
-        } else {
-          setError(err instanceof Error ? err.message : "Error al cargar producto");
-        }
-      })
-      .finally(() => setLoading(false));
+      fetchProductoBySlug(slug)
+        .then((res) => {
+          if (cancelled) return;
+          setData(res);
+          setSelectedQuantity(1);
+          const colorId = colorParam ? Number(colorParam) : null;
+          if (colorId && res.colores.length > 0) {
+            const index = res.colores.findIndex((c) => c.color.idColor === colorId);
+            if (index >= 0) setSelectedColorIndex(index);
+          }
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err instanceof Error && err.message.includes("404")) {
+            setNotFound(true);
+          } else {
+            setError(err instanceof Error ? err.message : "Error al cargar producto");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug, colorParam]);
 
   // Canonical URL for SEO (strip color query param)
@@ -242,12 +254,27 @@ export default function ProductoDetallePage() {
     ? variants.find((v) => v.talla.nombre === selectedSize) ?? null
     : null;
   const maxQuantity = currentVariant ? Math.min(currentVariant.stock, MAX_CART_QUANTITY_PER_VARIANT) : 1;
+  const colorOffer =
+    variants.length > 0 &&
+    variants.every(
+      (v) =>
+        v.tipoOfertaAplicada !== "NINGUNA" &&
+        v.precioVigente === variants[0].precioVigente &&
+        v.precioRegular === variants[0].precioRegular,
+    )
+      ? {
+          precioRegular: variants[0].precioRegular,
+          precioVigente: variants[0].precioVigente,
+        }
+      : null;
 
   const hasOffer =
-    currentVariant && currentVariant.tipoOfertaAplicada !== "NINGUNA";
+    currentVariant ? currentVariant.tipoOfertaAplicada !== "NINGUNA" : colorOffer !== null;
 
   const displayPrice = currentVariant
     ? `S/ ${currentVariant.precioVigente.toFixed(2)}`
+    : colorOffer
+    ? `S/ ${colorOffer.precioVigente.toFixed(2)}`
     : currentColor
     ? currentColor.precioMinimo === currentColor.precioMaximo
       ? `S/ ${currentColor.precioMinimo.toFixed(2)}`
@@ -256,6 +283,13 @@ export default function ProductoDetallePage() {
 
   const addedCurrentVariant =
     currentVariant?.idProductoVariante === addedVariantId;
+
+  const variantTitle = (variant: VarianteProducto) => {
+    if (!variant.disponible) return "Agotado";
+    return variant.tipoOfertaAplicada !== "NINGUNA"
+      ? `Oferta S/ ${variant.precioVigente.toFixed(2)}`
+      : "Disponible";
+  };
 
   const animateAddedImageToCart = (image: string | null) => {
     if (!image) return;
@@ -858,10 +892,10 @@ export default function ProductoDetallePage() {
                   {displayPrice}
                 </span>
                 <span className="text-base font-light text-black/40 line-through">
-                  S/ {currentVariant!.precioRegular.toFixed(2)}
+                  S/ {(currentVariant?.precioRegular ?? colorOffer!.precioRegular).toFixed(2)}
                 </span>
                 <span className="text-[10px] font-medium uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5">
-                  Oferta {currentVariant!.tipoOfertaAplicada === "SUCURSAL" ? "Especial" : "Global"}
+                  Oferta
                 </span>
               </div>
             ) : (
@@ -946,7 +980,7 @@ export default function ProductoDetallePage() {
                   }`}
                   title={
                     v.disponible
-                      ? `${v.stock} en stock${v.tipoOfertaAplicada !== "NINGUNA" ? ` · Oferta S/ ${v.precioVigente.toFixed(2)}` : ""}`
+                      ? variantTitle(v)
                       : "Agotado"
                   }
                 >
@@ -957,11 +991,6 @@ export default function ProductoDetallePage() {
                 </button>
               ))}
             </div>
-            {selectedSize && currentVariant && (
-              <p className="mt-2 text-[12px] font-light text-black/45">
-                {currentVariant.stock} unidad{currentVariant.stock !== 1 ? "es" : ""} disponible{currentVariant.stock !== 1 ? "s" : ""}
-              </p>
-            )}
             {!selectedSize && (
               <p className="mt-2 text-[12px] font-light text-black/30">
                 Selecciona una talla

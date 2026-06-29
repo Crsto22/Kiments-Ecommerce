@@ -77,11 +77,6 @@ function paymentLabel(value: string | null | undefined): string {
   return "";
 }
 
-function getInitialPedidoToken(): string {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("pedidoToken") ?? "";
-}
-
 interface StockIssueState {
   itemName: string;
   idProductoVariante: number;
@@ -103,9 +98,9 @@ function parseStockIssues(message: string): StockIssueState[] {
 
 export default function PagoPage() {
   const { items: cartItems, subtotal: total, clearCart, setQuantity } = useCart();
-  const initialPedidoToken = getInitialPedidoToken();
   const [step, setStep] = useState(1);
   const [stepKey, setStepKey] = useState(0);
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Paso 1 — contacto
   const [docNumber, setDocNumber] = useState("");
@@ -128,11 +123,9 @@ export default function PagoPage() {
   // Paso 2 — metodo de pago
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [createdPedido, setCreatedPedido] = useState<EcommercePedidoResponse | null>(null);
-  const [pedidoToken, setPedidoToken] = useState(initialPedidoToken);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(Boolean(initialPedidoToken));
-  const [hasCheckedPedidoToken, setHasCheckedPedidoToken] = useState(
-    () => !initialPedidoToken,
-  );
+  const [pedidoToken, setPedidoToken] = useState("");
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [hasCheckedPedidoToken, setHasCheckedPedidoToken] = useState(true);
   const [orderError, setOrderError] = useState("");
   const [turnstileLoaded, setTurnstileLoaded] = useState(
     () => typeof window !== "undefined" && Boolean(window.turnstile),
@@ -161,7 +154,7 @@ export default function PagoPage() {
   const [isResolvingStockIssue, setIsResolvingStockIssue] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const shouldRecoverPedidoRef = useRef(Boolean(initialPedidoToken));
+  const shouldRecoverPedidoRef = useRef(false);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
 
@@ -181,6 +174,25 @@ export default function PagoPage() {
       turnstileRef.current.innerHTML = "";
     }
     setTurnstileToken("");
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const token = new URLSearchParams(window.location.search).get("pedidoToken") ?? "";
+      if (token) {
+        shouldRecoverPedidoRef.current = true;
+        setPedidoToken(token);
+        setIsCreatingOrder(true);
+        setHasCheckedPedidoToken(false);
+      }
+      setHasMounted(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -501,7 +513,7 @@ export default function PagoPage() {
         ? "Recojo en tienda"
         : "";
 
-  if (!hasCheckedPedidoToken || (pedidoToken && !createdPedido && isCreatingOrder)) {
+  if (!hasMounted || !hasCheckedPedidoToken || (pedidoToken && !createdPedido && isCreatingOrder)) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">
         <Spinner size={28} className="animate-spin text-black/40" />

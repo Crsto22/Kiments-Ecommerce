@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildImageUrl } from "@/lib/api";
 import type { EcommercePortada } from "@/types/producto";
 
@@ -22,13 +22,17 @@ const AUTOPLAY_DELAY = 6000;
 
 export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const slides = portadas.length
-    ? portadas.map((portada) => ({
+  const slides = useMemo(
+    () => portadas.length
+      ? portadas.map((portada) => ({
         id: String(portada.idEcommercePortada),
         desktop: buildImageUrl(portada.desktopUrl) ?? portada.desktopUrl,
         mobile: buildImageUrl(portada.mobileUrl) ?? portada.mobileUrl,
       }))
-    : fallbackSlides;
+      : fallbackSlides,
+    [portadas],
+  );
+  const activeSlideIndex = activeIndex % slides.length;
 
   const goToPrev = useCallback(() => {
     setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
@@ -45,10 +49,6 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
     return () => window.clearInterval(timer);
   }, [slides.length]);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [portadas.length]);
-
   return (
     <section className="relative w-full bg-black">
       <div className="relative aspect-square w-full overflow-hidden md:hidden">
@@ -59,7 +59,7 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
             alt="Portada KIMENTS"
             decoding="async"
             className={`absolute inset-0 size-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeIndex ? "opacity-100" : "opacity-0"
+              index === activeSlideIndex ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
@@ -73,7 +73,7 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
             alt="Portada KIMENTS"
             decoding="async"
             className={`absolute inset-0 size-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeIndex ? "opacity-100" : "opacity-0"
+              index === activeSlideIndex ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}

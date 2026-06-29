@@ -12,8 +12,24 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ item, centered = false }: Readonly<ProductCardProps>) {
+  const offer =
+    item.variantes.length > 0 &&
+    item.variantes.every(
+      (v) =>
+        v.tipoOfertaAplicada !== "NINGUNA" &&
+        v.precioVigente === item.variantes[0].precioVigente &&
+        v.precioRegular === item.variantes[0].precioRegular,
+    )
+      ? {
+          precioRegular: item.variantes[0].precioRegular,
+          precioVigente: item.variantes[0].precioVigente,
+        }
+      : null;
+
   const priceLabel =
-    item.precioMinimo === item.precioMaximo
+    offer
+      ? `S/ ${offer.precioVigente.toFixed(2)}`
+      : item.precioMinimo === item.precioMaximo
       ? `S/ ${item.precioMinimo.toFixed(2)}`
       : `S/ ${item.precioMinimo.toFixed(2)} - S/ ${item.precioMaximo.toFixed(2)}`;
 
@@ -93,7 +109,19 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
           {item.producto.nombre}
         </h2>
         <p className="mt-1.5 text-[13px] font-light leading-none text-black">
-          {priceLabel}
+          {offer ? (
+            <span className="inline-flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1">
+              <span className="font-semibold text-red-700">{priceLabel}</span>
+              <span className="text-[12px] text-black/35 line-through">
+                S/ {offer.precioRegular.toFixed(2)}
+              </span>
+              <span className="bg-red-50 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-red-600">
+                Oferta
+              </span>
+            </span>
+          ) : (
+            priceLabel
+          )}
         </p>
 
         <div className={`mt-3 flex flex-wrap gap-1.5 ${centered ? "justify-center" : ""}`}>
@@ -105,7 +133,7 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
                   ? "border-black/25 text-black/75 hover:border-black hover:text-black"
                   : "border-black/5 text-black/25 line-through"
               }`}
-              title={size.disponible ? `${size.stock} en stock` : "Agotado"}
+              title={size.disponible ? "Disponible" : "Agotado"}
             >
               {size.label}
             </span>

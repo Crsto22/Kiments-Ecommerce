@@ -141,7 +141,7 @@ export default function NosotrosPage() {
                   </div>
                   <div>
                     <h4 className="text-[13px] font-medium uppercase tracking-[0.1em] text-black">Dirección</h4>
-                    <p className="mt-2 text-sm font-light text-black/70 leading-relaxed">KIMENT'S, Jr. Huánuco 1705-1707, La Victoria 15018, Perú</p>
+                    <p className="mt-2 text-sm font-light text-black/70 leading-relaxed">KIMENT&apos;S, Jr. Huánuco 1705-1707, La Victoria 15018, Perú</p>
                     <a href="https://maps.app.goo.gl/y2UpRRku5TkaRwG98" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-black hover:text-black/60 transition-colors">
                       Ver en Google Maps <ArrowRight size={14} weight="light" />
                     </a>

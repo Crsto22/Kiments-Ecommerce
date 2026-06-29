@@ -29,6 +29,7 @@ const navItems = [
   { label: "PRODUCTOS", href: "/productos" },
   { label: "NOSOTROS", href: "/nosotros" },
 ];
+const SEARCH_DEBOUNCE_MS = 1500;
 
 export function Navbar() {
   const pathname = usePathname();
@@ -88,7 +89,7 @@ export function Navbar() {
         .finally(() => {
           if (!cancelled) setIsSearching(false);
         });
-    }, 250);
+    }, SEARCH_DEBOUNCE_MS);
 
     return () => {
       cancelled = true;

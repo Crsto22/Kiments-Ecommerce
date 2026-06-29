@@ -89,6 +89,8 @@ export interface ProductoListParams {
   size?: number;
   q?: string;
   idCategoria?: number;
+  tallas?: string[];
+  precioMax?: number;
   soloDisponibles?: boolean;
 }
 

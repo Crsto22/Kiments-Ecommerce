@@ -25,11 +25,13 @@ import {
   Warning,
   Storefront,
 } from "@phosphor-icons/react";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchProductos, buildImageUrl } from "@/lib/api";
 import type { ProductoItem } from "@/types/producto";
 
 type ViewMode = "compact" | "normal" | "wide";
+const SIZE_FILTERS = ["XS", "S", "M", "L"];
+const PRICE_LIMIT = 2000;
 
 // Map API item to card format used by the UI
 interface ProductCard {
@@ -44,7 +46,6 @@ interface ProductCard {
   hasImage: boolean;
   colorHex: string;
   colorName: string;
-  category: string;
   sizes: { label: string; disponible: boolean; stock: number }[];
   estadoStock: string;
 }
@@ -88,16 +89,16 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
     hasImage: imageUrl !== null,
     colorHex: item.color.hex,
     colorName: item.color.nombre,
-    category: item.producto.categoria.nombre,
     sizes,
     estadoStock: item.estadoStock,
   };
 }
 
 export default function ProductosPage() {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [maxPrice, setMaxPrice] = useState(2000);
+  const [maxPrice, setMaxPrice] = useState(PRICE_LIMIT);
+  const [pendingSizes, setPendingSizes] = useState<string[]>([]);
+  const [pendingMaxPrice, setPendingMaxPrice] = useState(PRICE_LIMIT);
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
 
   // API state
@@ -116,7 +117,12 @@ export default function ProductosPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchProductos({ page: pageNum, size: pageSize });
+      const data = await fetchProductos({
+        page: pageNum,
+        size: pageSize,
+        tallas: selectedSizes,
+        precioMax: maxPrice,
+      });
       setTiendaConfigurada(data.tiendaConfigurada);
 
       if (!data.tiendaConfigurada) {
@@ -132,11 +138,6 @@ export default function ProductosPage() {
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
 
-      // Reset price slider to highest in current page
-      if (cards.length > 0) {
-        const max = Math.max(...cards.map((p) => p.priceMax));
-        setMaxPrice(Math.ceil(max));
-      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al cargar productos",
@@ -144,11 +145,19 @@ export default function ProductosPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [maxPrice, selectedSizes]);
 
   useEffect(() => {
-    fetchData(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      fetchData(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [page, fetchData]);
 
   const goToPage = (newPage: number) => {
@@ -157,45 +166,24 @@ export default function ProductosPage() {
     }
   };
 
-  // Extract unique filter options from fetched products
-  const productTypes = useMemo(() => {
-    return [...new Set(products.map((p) => p.category))].sort();
-  }, [products]);
+  const filteredProducts = products;
+  const hasActiveFilters = selectedSizes.length > 0 || maxPrice < PRICE_LIMIT;
 
-  const availableSizes = useMemo(() => {
-    const all = products.flatMap((p) => p.sizes.map((s) => s.label));
-    return [...new Set(all)].sort((a, b) => {
-      const na = Number(a);
-      const nb = Number(b);
-      if (!isNaN(na) && !isNaN(nb)) return na - nb;
-      return a.localeCompare(b);
-    });
-  }, [products]);
+  const sizesDiffer =
+    pendingSizes.length !== selectedSizes.length ||
+    pendingSizes.some((s) => !selectedSizes.includes(s));
 
-  // Client-side filtering
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesType =
-        selectedTypes.length === 0 || selectedTypes.includes(product.category);
-      const matchesSize =
-        selectedSizes.length === 0 ||
-        product.sizes.some((s) => selectedSizes.includes(s.label));
-      const matchesPrice = product.priceMin <= maxPrice;
+  const hasPendingChanges = pendingMaxPrice !== maxPrice || sizesDiffer;
 
-      return matchesType && matchesSize && matchesPrice;
-    });
-  }, [products, maxPrice, selectedSizes, selectedTypes]);
-
-  const toggleType = (type: string) => {
-    setSelectedTypes((current) =>
-      current.includes(type)
-        ? current.filter((item) => item !== type)
-        : [...current, type],
-    );
+  const applyFilters = () => {
+    if (!hasPendingChanges) return;
+    setSelectedSizes(pendingSizes);
+    setMaxPrice(pendingMaxPrice);
+    setPage(0);
   };
 
   const toggleSize = (size: string) => {
-    setSelectedSizes((current) =>
+    setPendingSizes((current) =>
       current.includes(size)
         ? current.filter((item) => item !== size)
         : [...current, size],
@@ -211,46 +199,28 @@ export default function ProductosPage() {
 
   const filtersContent = (
     <>
-      {productTypes.length > 0 && (
-        <FilterGroup title="Tipo de producto">
-          {productTypes.map((type) => (
-            <label key={type} className="flex items-center gap-3 text-sm font-light cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedTypes.includes(type)}
-                onChange={() => toggleType(type)}
-                className="size-4 accent-black"
-              />
-              <span>{type}</span>
-            </label>
-          ))}
-        </FilterGroup>
-      )}
-
-      {availableSizes.length > 0 && (
-        <FilterGroup title="Talla">
-          {availableSizes.map((size) => (
-            <label key={size} className="flex items-center gap-3 text-sm font-light cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedSizes.includes(size)}
-                onChange={() => toggleSize(size)}
-                className="size-4 accent-black"
-              />
-              <span>{size}</span>
-            </label>
-          ))}
-        </FilterGroup>
-      )}
+      <FilterGroup title="Talla">
+        {SIZE_FILTERS.map((size) => (
+          <label key={size} className="flex items-center gap-3 text-sm font-light cursor-pointer">
+            <input
+              type="checkbox"
+              checked={pendingSizes.includes(size)}
+              onChange={() => toggleSize(size)}
+              className="size-4 accent-black"
+            />
+            <span>{size}</span>
+          </label>
+        ))}
+      </FilterGroup>
 
       <FilterGroup title="Precio">
         <div className="px-1">
           <input
             type="range"
             min="0"
-            max={maxPrice}
-            value={maxPrice}
-            onChange={(event) => setMaxPrice(Number(event.target.value))}
+            max={PRICE_LIMIT}
+            value={pendingMaxPrice}
+            onChange={(event) => setPendingMaxPrice(Number(event.target.value))}
             className="w-full accent-black"
           />
           <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-light">
@@ -260,11 +230,23 @@ export default function ProductosPage() {
             </div>
             <div className="flex h-10 items-center justify-between bg-white px-3">
               <span>S/</span>
-              <span>{maxPrice.toFixed(2)}</span>
+              <span>{pendingMaxPrice.toFixed(2)}</span>
             </div>
           </div>
         </div>
       </FilterGroup>
+
+      {hasPendingChanges && (
+        <div className="mt-8 hidden lg:block">
+          <button
+            type="button"
+            onClick={applyFilters}
+            className="h-12 w-full bg-black text-sm font-light uppercase tracking-[0.14em] text-white transition-colors hover:bg-black/80"
+          >
+            Aplicar filtros
+          </button>
+        </div>
+      )}
     </>
   );
 
@@ -303,18 +285,23 @@ export default function ProductosPage() {
                       </DrawerClose>
                     </div>
                     <DrawerDescription className="sr-only">
-                      Filtra los productos por tipo, talla y precio
+                      Filtra los productos por talla y precio
                     </DrawerDescription>
                   </DrawerHeader>
                   <div className="flex-1 overflow-y-auto px-6 py-4">
                     {filtersContent}
                   </div>
                   <DrawerFooter className="border-t border-black/10 p-4">
-                    <DrawerClose asChild>
-                      <button className="h-12 w-full bg-black text-sm font-light uppercase tracking-widest text-white transition-colors hover:bg-black/80">
-                        Aplicar filtros
-                      </button>
-                    </DrawerClose>
+                    {hasPendingChanges && (
+                      <DrawerClose asChild>
+                        <button
+                          onClick={applyFilters}
+                          className="h-12 w-full bg-black text-sm font-light uppercase tracking-widest text-white transition-colors hover:bg-black/80"
+                        >
+                          Aplicar filtros
+                        </button>
+                      </DrawerClose>
+                    )}
                   </DrawerFooter>
                 </DrawerContent>
               </Drawer>
@@ -499,14 +486,14 @@ export default function ProductosPage() {
               </div>
 
               {/* No filter results */}
-              {filteredProducts.length === 0 && products.length > 0 && (
+              {filteredProducts.length === 0 && hasActiveFilters && (
                 <p className="mt-20 text-center text-sm font-light">
-                  No hay productos con esos filtros en esta página.
+                  No hay productos con esos filtros.
                 </p>
               )}
 
               {/* Completely empty */}
-              {products.length === 0 && (
+              {products.length === 0 && !hasActiveFilters && (
                 <p className="mt-20 text-center text-sm font-light">
                   No hay productos disponibles en este momento.
                 </p>

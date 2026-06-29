@@ -1,6 +1,7 @@
 import type { ProductoListParams, ProductoListResponse, ProductoDetalleResponse, EcommerceInicioResponse } from "@/types/producto";
 
 const API_BASE_PATH = "/api/public";
+const DEFAULT_PRODUCT_PRICE_MAX = 2000;
 const MEDIA_BASE_URL =
   process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.replace(/\/+$/, "") ?? "";
 
@@ -55,6 +56,10 @@ function buildSearchParams(params: ProductoListParams): string {
   if (params.size !== undefined) sp.set("size", String(params.size));
   if (params.q) sp.set("q", params.q);
   if (params.idCategoria !== undefined) sp.set("idCategoria", String(params.idCategoria));
+  if (params.tallas?.length) sp.set("tallas", [...params.tallas].sort().join(","));
+  if (params.precioMax !== undefined && params.precioMax < DEFAULT_PRODUCT_PRICE_MAX) {
+    sp.set("precioMax", String(params.precioMax));
+  }
   if (params.soloDisponibles !== undefined) sp.set("soloDisponibles", String(params.soloDisponibles));
   return sp.toString();
 }

@@ -25,8 +25,6 @@ export default function Home() {
   const [tiendaConfigurada, setTiendaConfigurada] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     fetchInicio()
       .then((res) => {
         setTiendaConfigurada(res.tiendaConfigurada);
