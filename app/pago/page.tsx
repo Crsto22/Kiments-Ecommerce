@@ -22,11 +22,24 @@ import {
   MapPin,
   FlagBanner,
 } from "@phosphor-icons/react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useCart } from "@/components/CartProvider";
 import { ApiError, buildImageUrl, createEcommercePedido, fetchEcommercePedidoActual, uploadEcommerceComprobante, type EcommercePedidoResponse } from "@/lib/api";
+import peruUbigeo from "@/lib/peru-ubigeo.json";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+type PeruProvincia = {
+  name: string;
+  districts: string[];
+};
+
+type PeruDepartamento = {
+  name: string;
+  provinces: PeruProvincia[];
+};
+
+const PERU_UBIGEO = peruUbigeo as PeruDepartamento[];
 
 declare global {
   interface Window {
@@ -157,6 +170,14 @@ export default function PagoPage() {
   const shouldRecoverPedidoRef = useRef(false);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
+  const selectedDepartamento = useMemo(
+    () => PERU_UBIGEO.find((item) => item.name === departamento),
+    [departamento],
+  );
+  const selectedProvincia = useMemo(
+    () => selectedDepartamento?.provinces.find((item) => item.name === provincia),
+    [provincia, selectedDepartamento],
+  );
 
   const resetTurnstile = useCallback(() => {
     setTurnstileToken("");
@@ -1075,27 +1096,54 @@ export default function PagoPage() {
 
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div>
-                          <Input
-                            placeholder="Departamento"
+                          <select
+                            aria-label="Departamento"
                             value={departamento}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDepartamento(e.target.value); }}
-                        />
-                      </div>
-                      <div>
-                          <Input
-                            placeholder="Provincia"
+                            onChange={(e) => {
+                              setDepartamento(e.target.value);
+                              setProvincia("");
+                              setDistrito("");
+                            }}
+                            className="h-12 w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-light text-[#222] outline-none transition-colors focus:border-black"
+                          >
+                            <option value="">Departamento</option>
+                            {PERU_UBIGEO.map((item) => (
+                              <option key={item.name} value={item.name}>{item.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <select
+                            aria-label="Provincia"
                             value={provincia}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setProvincia(e.target.value); }}
-                        />
-                      </div>
-                      <div>
-                          <Input
-                            placeholder="Distrito"
+                            onChange={(e) => {
+                              setProvincia(e.target.value);
+                              setDistrito("");
+                            }}
+                            disabled={!selectedDepartamento}
+                            className="h-12 w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-light text-[#222] outline-none transition-colors focus:border-black disabled:bg-[#fafafa] disabled:text-black/40"
+                          >
+                            <option value="">Provincia</option>
+                            {selectedDepartamento?.provinces.map((item) => (
+                              <option key={item.name} value={item.name}>{item.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <select
+                            aria-label="Distrito"
                             value={distrito}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDistrito(e.target.value); }}
-                        />
+                            onChange={(e) => { setDistrito(e.target.value); }}
+                            disabled={!selectedProvincia}
+                            className="h-12 w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-light text-[#222] outline-none transition-colors focus:border-black disabled:bg-[#fafafa] disabled:text-black/40"
+                          >
+                            <option value="">Distrito</option>
+                            {selectedProvincia?.districts.map((item) => (
+                              <option key={item} value={item}>{item}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                    </div>
 
                     {/* Tarifa de envio */}
                       <div>
