@@ -5,6 +5,10 @@ const DEFAULT_PRODUCT_PRICE_MAX = 2000;
 const MEDIA_BASE_URL =
   process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.replace(/\/+$/, "") ?? "";
 
+function stripStoragePrefix(pathname: string): string {
+  return pathname.replace(/^\/storage(?=\/|$)/, "");
+}
+
 class ApiError extends Error {
   status: number;
   code: string | undefined;
@@ -175,7 +179,8 @@ export function buildImageUrl(relativePath: string | null | undefined): string |
   if (!relativePath) return null;
   const parsed = relativePath.startsWith("http") ? new URL(relativePath) : null;
   const path = parsed ? `${parsed.pathname}${parsed.search}` : relativePath;
-  const mediaPath = `${path}`;
+  const [pathname, query = ""] = path.split("?", 2);
+  const mediaPath = `${stripStoragePrefix(pathname.startsWith("/") ? pathname : `/${pathname}`)}${query ? `?${query}` : ""}`;
   return MEDIA_BASE_URL ? `${MEDIA_BASE_URL}${mediaPath}` : mediaPath;
 }
 
