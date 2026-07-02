@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Minus } from "@phosphor-icons/react/dist/ssr";
+import { Minus, Plus } from "@phosphor-icons/react/dist/ssr";
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
 
 interface FaqAccordionProps {
-  items: { question: string; answer: string }[];
+  items: FaqItem[];
 }
 
 export function FaqAccordion({ items }: FaqAccordionProps) {
@@ -15,15 +20,16 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
       {items.map((item, index) => {
         const isOpen = openIndex === index;
         return (
-          <div key={index} className="border-b border-black/15 last:border-0">
+          <div key={item.question} className="border-b border-black/15 last:border-0">
             <button
+              type="button"
               onClick={() => setOpenIndex(isOpen ? null : index)}
               className="group flex w-full items-center justify-between py-7 text-left transition-colors"
             >
-              <h3 className={`text-[13px] font-medium uppercase tracking-[0.06em] transition-colors sm:text-sm ${isOpen ? 'text-black' : 'text-black/80 group-hover:text-black'}`}>
+              <h3 className={`text-[13px] font-medium uppercase tracking-[0.06em] transition-colors sm:text-sm ${isOpen ? "text-black" : "text-black/80 group-hover:text-black"}`}>
                 {item.question}
               </h3>
-              <span className={`ml-6 shrink-0 transition-transform duration-500 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>
+              <span className={`ml-6 shrink-0 transition-transform duration-500 ${isOpen ? "rotate-180" : "rotate-0"}`}>
                 {isOpen ? (
                   <Minus size={20} weight="thin" className="text-black" />
                 ) : (

@@ -5,9 +5,15 @@ const SPRING_BOOT_BASE_URL =
 
 const CACHE_TTL = {
   inicio: 300,
-  productos: 120,
-  productoDetalle: 60,
-  busqueda: 30,
+  productos: 300,
+  productoDetalle: 300,
+  busqueda: 60,
+} as const;
+
+const CACHE_TAGS = {
+  inicio: "ecommerce:inicio",
+  productos: "ecommerce:productos",
+  detalle: "ecommerce:detalle",
 } as const;
 
 function buildUpstreamUrl(request: NextRequest, path: string[] | undefined): string {
@@ -15,14 +21,24 @@ function buildUpstreamUrl(request: NextRequest, path: string[] | undefined): str
   return `${SPRING_BOOT_BASE_URL}/api/public/${pathname}${request.nextUrl.search}`;
 }
 
-function resolveCacheTtl(request: NextRequest, path: string[] | undefined): number | null {
+function resolveCachePolicy(
+  request: NextRequest,
+  path: string[] | undefined,
+): { ttl: number; tags: string[] } | null {
   const pathname = path?.join("/") ?? "";
   if (pathname.startsWith("ecommerce/pedidos")) return null;
-  if (pathname === "ecommerce/inicio") return CACHE_TTL.inicio;
-  if (pathname === "ecommerce/productos") {
-    return request.nextUrl.searchParams.has("q") ? CACHE_TTL.busqueda : CACHE_TTL.productos;
+  if (pathname === "ecommerce/inicio") {
+    return { ttl: CACHE_TTL.inicio, tags: [CACHE_TAGS.inicio] };
   }
-  if (pathname.startsWith("ecommerce/productos/")) return CACHE_TTL.productoDetalle;
+  if (pathname === "ecommerce/productos") {
+    return {
+      ttl: request.nextUrl.searchParams.has("q") ? CACHE_TTL.busqueda : CACHE_TTL.productos,
+      tags: [CACHE_TAGS.productos],
+    };
+  }
+  if (pathname.startsWith("ecommerce/productos/")) {
+    return { ttl: CACHE_TTL.productoDetalle, tags: [CACHE_TAGS.detalle] };
+  }
   return null;
 }
 
@@ -38,7 +54,7 @@ async function proxyPublic(
   method: "GET" | "HEAD" | "POST",
 ): Promise<Response> {
   let upstream: Response;
-  const ttl = method === "POST" ? null : resolveCacheTtl(request, path);
+  const cachePolicy = method === "POST" ? null : resolveCachePolicy(request, path);
   const headers = new Headers();
   const accept = request.headers.get("accept");
   const contentType = request.headers.get("content-type");
@@ -51,8 +67,10 @@ async function proxyPublic(
       headers,
       body: method === "POST" ? request.body : undefined,
       duplex: method === "POST" ? "half" : undefined,
-      cache: ttl === null ? "no-store" : undefined,
-      next: ttl === null ? undefined : { revalidate: ttl },
+      cache: cachePolicy === null ? "no-store" : undefined,
+      next: cachePolicy === null
+        ? undefined
+        : { revalidate: cachePolicy.ttl, tags: cachePolicy.tags },
     };
     upstream = await fetch(buildUpstreamUrl(request, path), init);
   } catch {
@@ -63,7 +81,7 @@ async function proxyPublic(
   }
 
   const responseHeaders = new Headers(upstream.headers);
-  responseHeaders.set("Cache-Control", cacheControl(ttl));
+  responseHeaders.set("Cache-Control", cacheControl(cachePolicy?.ttl ?? null));
 
   return new Response(method === "HEAD" ? null : upstream.body, {
     status: upstream.status,

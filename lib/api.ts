@@ -134,6 +134,21 @@ export interface EcommercePedidoDetalle {
   imagenUrl: string | null;
 }
 
+export interface EcommerceRucValidationResponse {
+  valid: boolean | null;
+  ruc: string | null;
+  razonSocial: string | null;
+  message: string | null;
+}
+
+export async function validateEcommerceRuc(
+  ruc: string,
+): Promise<EcommerceRucValidationResponse> {
+  return apiFetch<EcommerceRucValidationResponse>(
+    `/ecommerce/documentos/ruc/${encodeURIComponent(ruc)}`,
+  );
+}
+
 export async function createEcommercePedido(
   payload: EcommercePedidoCreateRequest,
 ): Promise<EcommercePedidoResponse> {

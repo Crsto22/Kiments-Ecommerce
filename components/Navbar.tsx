@@ -116,7 +116,7 @@ export function Navbar() {
     if (!canSearch) setSearchResults([]);
   };
 
-  if (pathname === "/pago" || pathname === "/carrito") {
+  if (pathname === "/pago" || pathname.startsWith("/pago/") || pathname === "/carrito") {
     return null;
   }
 
