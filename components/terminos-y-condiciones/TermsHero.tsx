@@ -20,7 +20,7 @@ export function TermsHero() {
           TÉRMINOS Y CONDICIONES
         </h1>
         <p className="mt-6 text-[12px] font-light tracking-[0.05em] text-black/70 sm:text-sm">
-          Última actualización: Junio de 2026
+          Última actualización: Julio de 2026
         </p>
       </div>
     </section>

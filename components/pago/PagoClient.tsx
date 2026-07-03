@@ -26,7 +26,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useCart } from "@/components/CartProvider";
-import { ApiError, buildImageUrl, createEcommercePedido, fetchEcommercePedidoActual, uploadEcommerceComprobante, validateEcommerceRuc, type EcommercePedidoResponse } from "@/lib/api";
+import { ApiError, buildImageUrl, createEcommercePedido, fetchEcommercePedidoActual, uploadEcommerceComprobante, type EcommercePedidoResponse } from "@/lib/api";
 import peruUbigeo from "@/lib/peru-ubigeo.json";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
@@ -152,11 +152,9 @@ export default function PagoPage() {
   const [createdPedido, setCreatedPedido] = useState<EcommercePedidoResponse | null>(null);
   const [pedidoToken, setPedidoToken] = useState("");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [isValidatingRuc, setIsValidatingRuc] = useState(false);
   const [hasCheckedPedidoToken, setHasCheckedPedidoToken] = useState(true);
   const [copiedPaymentValue, setCopiedPaymentValue] = useState("");
   const [orderError, setOrderError] = useState("");
-  const [rucNotice, setRucNotice] = useState("");
   const [turnstileLoaded, setTurnstileLoaded] = useState(
     () => typeof window !== "undefined" && Boolean(window.turnstile),
   );
@@ -200,6 +198,7 @@ export default function PagoPage() {
     [provincia, selectedDepartamento],
   );
   const requiresDniForReceipt = total >= DNI_REQUIRED_RECEIPT_TOTAL && !wantsInvoice;
+  const isLimaDelivery = departamento === "Lima" && provincia === "Lima";
 
   const resetTurnstile = useCallback(() => {
     setTurnstileToken("");
@@ -396,33 +395,6 @@ export default function PagoPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const validateInvoiceRucBeforeOrder = async (): Promise<boolean> => {
-    setRucNotice("");
-    if (!wantsInvoice) return true;
-    setIsValidatingRuc(true);
-    try {
-      const response = await validateEcommerceRuc(rucNumber.trim());
-      if (response.valid === false) {
-        setErrors({
-          rucNumber: "No encontramos una razon social para este RUC. Verifica el numero e intentalo otra vez.",
-        });
-        setWarningModalTitle("RUC no valido");
-        setWarningModalDescription("No se pudo validar la factura:");
-        setShowWarningModal(true);
-        return false;
-      }
-      if (response.valid === null) {
-        setRucNotice("No pudimos validar el RUC en este momento. El pedido continuara y sera revisado.");
-      }
-      return true;
-    } catch {
-      setRucNotice("No pudimos validar el RUC en este momento. El pedido continuara y sera revisado.");
-      return true;
-    } finally {
-      setIsValidatingRuc(false);
-    }
-  };
-
   const createPedidoFromItems = async (
     itemsToCreate: typeof cartItems,
   ) => {
@@ -486,12 +458,10 @@ export default function PagoPage() {
   };
 
   const handleGoToStep3 = async () => {
-    if (orderSubmitLockRef.current || isCreatingOrder || isValidatingRuc) return;
+    if (orderSubmitLockRef.current || isCreatingOrder) return;
     orderSubmitLockRef.current = true;
     try {
       if (!validateStep2()) return;
-      const canCreateOrder = await validateInvoiceRucBeforeOrder();
-      if (!canCreateOrder) return;
       await createPedidoFromItems(cartItems);
     } finally {
       orderSubmitLockRef.current = false;
@@ -630,6 +600,10 @@ export default function PagoPage() {
       : shippingType === "pickup"
         ? "Recojo en tienda"
         : "";
+  const shippingSummaryLabel =
+    shippingType === "delivery"
+      ? "El precio de envio se coordinara con la asesora de ventas"
+      : shippingLabel || "Calculado en el proximo paso";
 
   if (!hasMounted || !hasCheckedPedidoToken || (pedidoToken && !createdPedido && isCreatingOrder)) {
     return (
@@ -840,7 +814,7 @@ export default function PagoPage() {
             <div className="flex justify-between py-2 font-light text-black/70">
               <span>Envío</span>
               <span className="text-[12px]">
-                {shippingLabel || "Calculado en el próximo paso"}
+                {shippingSummaryLabel}
               </span>
             </div>
           </div>
@@ -907,7 +881,7 @@ export default function PagoPage() {
               <div className="flex justify-between py-2 font-light text-black/70">
                 <span>Envío</span>
                 <span className="text-[12px]">
-                  {shippingLabel || "Calculado en el próximo paso"}
+                  {shippingSummaryLabel}
                 </span>
               </div>
             </div>
@@ -1101,6 +1075,9 @@ export default function PagoPage() {
                       onChange={(e) => { setEmail(e.target.value); }}
                       className="h-12 w-full rounded-md border border-gray-300 bg-white px-4 text-sm font-light outline-none transition-shadow focus:border-black focus:ring-1 focus:ring-black"
                     />
+                    <p className="mt-1.5 text-[12px] text-black/50">
+                      A este correo enviaremos todos los datos de tu pedido.
+                    </p>
                   </div>
 
                   {/* Telefono +51 */}
@@ -1225,6 +1202,7 @@ export default function PagoPage() {
                               setDepartamento(e.target.value);
                               setProvincia("");
                               setDistrito("");
+                              if (shippingRate === "motorizado") setShippingRate("");
                             }}
                             className="h-12 w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-light text-[#222] outline-none transition-colors focus:border-black"
                           >
@@ -1239,8 +1217,12 @@ export default function PagoPage() {
                             aria-label="Provincia"
                             value={provincia}
                             onChange={(e) => {
-                              setProvincia(e.target.value);
+                              const nextProvincia = e.target.value;
+                              setProvincia(nextProvincia);
                               setDistrito("");
+                              if (shippingRate === "motorizado" && !(departamento === "Lima" && nextProvincia === "Lima")) {
+                                setShippingRate("");
+                              }
                             }}
                             disabled={!selectedDepartamento}
                             className="h-12 w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-light text-[#222] outline-none transition-colors focus:border-black disabled:bg-[#fafafa] disabled:text-black/40"
@@ -1316,7 +1298,7 @@ export default function PagoPage() {
                               />
                               <div>
                                 <span className="text-sm font-medium text-[#222]">Olva</span>
-                                <p className="mt-0.5 text-[12px] text-black/50">Solo Lima. El costo se coordina al interno</p>
+                                <p className="mt-0.5 text-[12px] text-black/50">El costo se coordina al interno</p>
                               </div>
                             </div>
                             <img
@@ -1326,11 +1308,13 @@ export default function PagoPage() {
                             />
                           </label>
                           <label
-                            className={`flex cursor-pointer items-center justify-between gap-3 rounded-md border p-3 transition-colors ${
+                            className={`flex items-center justify-between gap-3 rounded-md border p-3 transition-colors ${
                               shippingRate === "motorizado"
                                 ? "border-black bg-[#fafafa]"
-                                : "border-gray-200 bg-white hover:bg-gray-50"
-                            }`}
+                                : isLimaDelivery
+                                  ? "border-gray-200 bg-white hover:bg-gray-50"
+                                  : "border-gray-200 bg-[#fafafa] opacity-60"
+                            } ${isLimaDelivery ? "cursor-pointer" : "cursor-not-allowed"}`}
                           >
                             <div className="flex items-start gap-3 min-w-0">
                               <input
@@ -1338,12 +1322,17 @@ export default function PagoPage() {
                                 name="shippingRate"
                                 value="motorizado"
                                 checked={shippingRate === "motorizado"}
-                                onChange={() => { setShippingRate("motorizado"); }}
+                                disabled={!isLimaDelivery}
+                                onChange={() => {
+                                  if (isLimaDelivery) setShippingRate("motorizado");
+                                }}
                                 className="mt-0.5 size-[18px] shrink-0 accent-black"
                               />
                               <div>
                                 <span className="text-sm font-medium text-[#222]">Motorizado</span>
-                                <p className="mt-0.5 text-[12px] text-black/50">El costo se coordina al interno</p>
+                                <p className="mt-0.5 text-[12px] text-black/50">
+                                  Solo Lima. {isLimaDelivery ? "El costo se coordina al interno" : "No disponible para esta provincia"}
+                                </p>
                               </div>
                             </div>
                             <img
@@ -1577,22 +1566,12 @@ export default function PagoPage() {
                       <XCircle size={14} /> {orderError}
                     </p>
                   )}
-                  {rucNotice && (
-                    <p className="mb-3 flex items-center gap-1.5 text-[12px] text-amber-600">
-                      <WarningCircle size={14} /> {rucNotice}
-                    </p>
-                  )}
                   <button
                     type="submit"
-                    disabled={isCreatingOrder || isValidatingRuc || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
+                    disabled={isCreatingOrder || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
                     className="flex h-[56px] w-full items-center justify-center gap-2 rounded-md bg-black px-6 text-[15px] font-medium tracking-wide text-white transition-all hover:bg-black/80 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-black/30"
                   >
-                    {isValidatingRuc ? (
-                      <>
-                        <Spinner size={20} className="animate-spin" />
-                        Validando RUC...
-                      </>
-                    ) : isCreatingOrder ? (
+                    {isCreatingOrder ? (
                       <>
                         <Spinner size={20} className="animate-spin" />
                         Reservando stock...

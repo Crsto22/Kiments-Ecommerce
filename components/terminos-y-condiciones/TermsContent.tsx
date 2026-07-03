@@ -1,31 +1,96 @@
+const policyIntro = [
+  "En KIMENT'S nos comprometemos a ofrecer productos de calidad y una experiencia de compra segura. La presente política establece las condiciones aplicables para cambios, devoluciones y reembolsos de los productos adquiridos a través de nuestros canales de venta.",
+  "Al realizar una compra, el cliente declara haber leído y aceptado la presente política.",
+];
+
 const termsSections = [
   {
-    title: "01. ASPECTOS GENERALES",
+    title: "01. Revisión del pedido",
     paragraphs: [
-      <>
-        Bienvenido a <span className="font-semibold text-black">KIMENTS</span>. El acceso y uso de este sitio web, así como la compra de nuestros productos, están sujetos a los siguientes términos y condiciones. Al utilizar nuestro sitio, aceptas estas políticas en su totalidad.
-      </>,
-      "KIMENTS se reserva el derecho de actualizar, modificar o reemplazar cualquier parte de estas condiciones mediante la publicación de actualizaciones en nuestro sitio web. Es tu responsabilidad revisar esta página periódicamente para verificar los cambios.",
+      "Al recibir su pedido, el cliente deberá verificar que:",
+    ],
+    bullets: [
+      "El producto corresponda al modelo solicitado.",
+      "La talla y color sean los seleccionados.",
+      "La cantidad recibida sea la correcta.",
+      "El producto no presente daños o defectos visibles.",
+    ],
+    closing: [
+      "En caso de identificar alguna incidencia, deberá comunicarse con KIMENT'S dentro de las primeras 24 horas posteriores a la recepción del pedido, adjuntando fotografías claras del producto, del empaque y de la guía o comprobante de entrega.",
+      "Las comunicaciones realizadas fuera de dicho plazo podrán ser evaluadas; sin embargo, KIMENT'S no garantiza su procedencia cuando no sea posible verificar que la incidencia existía al momento de la entrega.",
     ],
   },
   {
-    title: "02. POLÍTICA DE COMPRA Y PAGOS",
+    title: "02. Condiciones para solicitar un cambio",
     paragraphs: [
-      "Todos los precios indicados en nuestro sitio web incluyen los impuestos correspondientes vigentes en Perú, salvo que se indique lo contrario. Los costos de envío se calculan de manera independiente al finalizar la compra.",
-      "Aceptamos como métodos de pago únicamente transferencias bancarias directas y Yape. Todo el proceso es seguro y tu información financiera no es almacenada en nuestros servidores.",
+      "Los cambios podrán realizarse siempre que el producto:",
+    ],
+    bullets: [
+      "No haya sido usado, lavado ni alterado.",
+      "No presente manchas, olores, desgaste o daños ocasionados por el cliente.",
+      "Conserve todas sus etiquetas originales.",
+      "Sea devuelto en las mismas condiciones en que fue entregado.",
+      "Cuente con el comprobante de compra o número de pedido.",
+    ],
+    closing: [
+      "Los cambios por talla, color o modelo estarán sujetos a disponibilidad de stock al momento de la solicitud.",
+      "En caso de no existir disponibilidad del producto solicitado, el cliente podrá elegir otro producto de igual o mayor valor, asumiendo la diferencia correspondiente.",
     ],
   },
   {
-    title: "03. ENVÍOS Y ENTREGAS",
+    title: "03. Productos con fallas de fabricación",
     paragraphs: [
-      "Procesamos los pedidos con la mayor agilidad posible. Los tiempos de entrega estimados varían entre 2 a 5 días hábiles para Lima Metropolitana, y de 5 a 10 días hábiles para provincias, dependiendo del operador logístico.",
-      "KIMENTS no se hace responsable por retrasos generados por eventos de fuerza mayor o problemas ajenos a nuestra logística, pero siempre estaremos a tu disposición para ayudarte a rastrear tu pedido.",
+      "Si el producto presenta una falla atribuible a fabricación o el cliente recibe un producto distinto al solicitado, KIMENT'S realizará una evaluación del caso.",
+      "De confirmarse la responsabilidad de KIMENT'S, se podrá ofrecer una de las siguientes soluciones:",
+    ],
+    bullets: [
+      "Cambio del producto.",
+      "Reposición por uno nuevo.",
+      "Reembolso del importe pagado.",
+      "Otra solución acordada con el cliente.",
+    ],
+    closing: [
+      "Cuando la incidencia sea responsabilidad de KIMENT'S, los costos de envío y devolución serán asumidos por la empresa.",
     ],
   },
   {
-    title: "04. PRIVACIDAD DE DATOS",
+    title: "04. Casos que no aplican para cambios o devoluciones",
     paragraphs: [
-      "Respetamos tu privacidad. Los datos personales proporcionados durante la navegación o compra serán utilizados única y exclusivamente para procesar tus pedidos y, si nos autorizas, para enviarte comunicaciones exclusivas sobre nuestras colecciones. No compartiremos tu información con terceros sin tu consentimiento.",
+      "No procederán cambios ni devoluciones cuando:",
+    ],
+    bullets: [
+      "El cliente seleccionó incorrectamente la talla, color o modelo y el producto fue enviado conforme al pedido realizado, salvo que KIMENT'S ofrezca el cambio por cortesía y exista disponibilidad.",
+      "El producto presente señales de uso.",
+      "El producto haya sido lavado, planchado, modificado o reparado por terceros.",
+      "Se hayan retirado las etiquetas originales.",
+      "El daño sea consecuencia del uso inadecuado, almacenamiento incorrecto o desgaste normal.",
+      "No sea posible acreditar la compra.",
+    ],
+  },
+  {
+    title: "05. Reembolsos",
+    paragraphs: [
+      "Los reembolsos únicamente procederán cuando corresponda conforme a la legislación aplicable o luego de la evaluación realizada por KIMENT'S.",
+      "En caso de aprobarse un reembolso, este se efectuará utilizando el mismo medio de pago empleado en la compra o mediante otro medio acordado entre ambas partes.",
+      "El tiempo de procesamiento podrá variar según la entidad financiera o plataforma de pago utilizada.",
+    ],
+  },
+  {
+    title: "06. Evaluación de solicitudes",
+    paragraphs: [
+      "Toda solicitud será revisada individualmente. KIMENT'S podrá solicitar fotografías, videos u otra información necesaria para verificar el estado del producto y determinar la procedencia del cambio, devolución o reembolso.",
+      "La aprobación de una solicitud estará sujeta al cumplimiento de las condiciones establecidas en esta política.",
+    ],
+  },
+  {
+    title: "07. Información importante",
+    bullets: [
+      "Las imágenes publicadas son referenciales; los tonos pueden presentar ligeras variaciones debido a la iluminación o configuración de cada pantalla.",
+      "Las medidas publicadas pueden presentar pequeñas variaciones propias del proceso de fabricación.",
+      "KIMENT'S se reserva el derecho de rechazar solicitudes cuando se detecte un uso indebido de la política de cambios o evidencia de manipulación del producto.",
+    ],
+    closing: [
+      "Esta política no limita ni reemplaza los derechos reconocidos por la legislación peruana en materia de protección al consumidor.",
     ],
   },
 ];
@@ -33,19 +98,45 @@ const termsSections = [
 export function TermsContent() {
   return (
     <section className="px-7 py-20 sm:px-10 lg:px-16 xl:px-20">
-      <div className="mx-auto max-w-3xl space-y-16">
-        {termsSections.map((section) => (
-          <div key={section.title}>
-            <h2 className="mb-6 text-xl font-medium tracking-[0.08em] text-black">
-              {section.title}
-            </h2>
-            <div className="space-y-4 text-sm font-light leading-relaxed text-black/75 sm:text-base">
-              {section.paragraphs.map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-16 space-y-4 text-sm font-light leading-relaxed text-black/75 sm:text-base">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/50">
+            Política de Cambios, Devoluciones y Reembolsos
+          </p>
+          <h2 className="text-2xl font-medium tracking-[0.08em] text-black">
+            KIMENT&apos;S
+          </h2>
+          {policyIntro.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+
+        <div className="space-y-16">
+          {termsSections.map((section) => (
+            <div key={section.title}>
+              <h3 className="mb-6 text-xl font-medium tracking-[0.08em] text-black">
+                {section.title}
+              </h3>
+              <div className="space-y-4 text-sm font-light leading-relaxed text-black/75 sm:text-base">
+                {section.paragraphs?.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+
+                {section.bullets && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    {section.bullets.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {section.closing?.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <div className="mx-auto mt-24 max-w-3xl border-t border-black/10 pt-12 text-center">

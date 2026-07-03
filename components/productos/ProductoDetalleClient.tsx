@@ -254,6 +254,7 @@ export default function ProductoDetallePage() {
     ? variants.find((v) => v.talla.nombre === selectedSize) ?? null
     : null;
   const maxQuantity = currentVariant ? Math.min(currentVariant.stock, MAX_CART_QUANTITY_PER_VARIANT) : 1;
+  const hasLowStock = currentVariant ? currentVariant.stock > 0 && currentVariant.stock <= 3 : false;
   const colorOffer =
     variants.length > 0 &&
     variants.every(
@@ -994,6 +995,11 @@ export default function ProductoDetallePage() {
             {!selectedSize && (
               <p className="mt-2 text-[12px] font-light text-black/30">
                 Selecciona una talla
+              </p>
+            )}
+            {hasLowStock && (
+              <p className="mt-2 text-[12px] font-medium text-amber-600">
+                Últimas unidades
               </p>
             )}
           </div>

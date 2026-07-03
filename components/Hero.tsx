@@ -1,6 +1,7 @@
 "use client";
 
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildImageUrl } from "@/lib/api";
 import type { EcommercePortada } from "@/types/producto";
@@ -51,7 +52,7 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
 
   return (
     <section className="relative w-full bg-black">
-      <div className="relative aspect-square w-full overflow-hidden md:hidden">
+      <Link href="/productos" aria-label="Ver productos" className="relative block aspect-square w-full overflow-hidden md:hidden">
         {slides.map((slide, index) => (
           <img
             key={slide.id}
@@ -63,9 +64,9 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
             }`}
           />
         ))}
-      </div>
+      </Link>
 
-      <div className="relative hidden aspect-[16/9] w-full overflow-hidden md:block">
+      <Link href="/productos" aria-label="Ver productos" className="relative hidden aspect-[16/9] w-full overflow-hidden md:block">
         {slides.map((slide, index) => (
           <img
             key={slide.desktop}
@@ -77,7 +78,7 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
             }`}
           />
         ))}
-      </div>
+      </Link>
 
       <button
         type="button"
