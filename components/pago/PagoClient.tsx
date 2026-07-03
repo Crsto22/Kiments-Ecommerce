@@ -63,7 +63,7 @@ const paymentMethods = [
     imageAlt: "Yape",
     imageClassName: "size-12 rounded-md object-contain",
     type: "yape" as const,
-    detailNumber: "",
+    detailNumber: "907777760",
     detailName: "Crestian Con*",
     detailDni: "",
     detailCci: "",
@@ -1660,6 +1660,21 @@ export default function PagoPage() {
                             <p className="text-lg font-semibold tracking-wide">{selectedPayment?.detailName}</p>
                           </div>
                           <p className="mt-2 text-[12px] leading-relaxed text-white/75">Escanea el QR. El monto debe ser exacto.</p>
+                          <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-[12px] text-white">
+                            <span>Yape: {selectedPayment?.detailNumber}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyPaymentValue(selectedPayment?.detailNumber)}
+                              className="rounded p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                              aria-label="Copiar numero de Yape"
+                            >
+                              {copiedPaymentValue === selectedPayment?.detailNumber ? (
+                                <CheckCircle size={15} weight="fill" className="text-[#12c8b8]" />
+                              ) : (
+                                <Copy size={15} />
+                              )}
+                            </button>
+                          </div>
                           <button
                             type="button"
                             onClick={downloadYapeQr}

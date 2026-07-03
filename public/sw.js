@@ -1,5 +1,16 @@
-const CACHE_NAME = "kiments-pwa-v1";
+const CACHE_NAME = "kiments-pwa-v2";
 const APP_SHELL = ["/", "/productos", "/img/pwa/logo_pwa.png", "/manifest.webmanifest"];
+const MEDIA_REQUEST = /\.(?:mp4|webm|mov|m4v|mp3|wav|ogg)$/i;
+
+function canCache(request, response) {
+  const url = new URL(request.url);
+  return (
+    response.status === 200 &&
+    response.type === "basic" &&
+    !request.headers.has("range") &&
+    !MEDIA_REQUEST.test(url.pathname)
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -27,12 +38,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (request.headers.has("range") || MEDIA_REQUEST.test(url.pathname)) {
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          if (canCache(request, response)) {
+            const copy = response.clone();
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {}));
+          }
           return response;
         })
         .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
@@ -44,12 +61,12 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
-        if (response.ok) {
+        if (canCache(request, response)) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {}));
         }
         return response;
-      });
+      }).catch(() => caches.match(request).then((cached) => cached || Response.error()));
     }),
   );
 });
