@@ -45,6 +45,8 @@ export function NosotrosStore() {
 
           <div className="relative order-1 aspect-square w-full overflow-hidden bg-white ring-1 ring-inset ring-black/10 lg:order-2 lg:aspect-[4/3]">
             <iframe
+              title="Mapa de la tienda KIMENTS en La Victoria"
+              sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
               src="https://maps.google.com/maps?q=-12.0656129,-77.0148385&hl=es&z=17&output=embed"
               width="100%"
               height="100%"

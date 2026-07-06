@@ -7,6 +7,7 @@ const CACHE_TTL = {
   inicio: 300,
   productos: 300,
   productoDetalle: 300,
+  stock: 10,
   busqueda: 60,
 } as const;
 
@@ -14,6 +15,7 @@ const CACHE_TAGS = {
   inicio: "ecommerce:inicio",
   productos: "ecommerce:productos",
   detalle: "ecommerce:detalle",
+  stock: "ecommerce:stock",
 } as const;
 
 function buildUpstreamUrl(request: NextRequest, path: string[] | undefined): string {
@@ -35,6 +37,14 @@ function resolveCachePolicy(
       ttl: request.nextUrl.searchParams.has("q") ? CACHE_TTL.busqueda : CACHE_TTL.productos,
       tags: [CACHE_TAGS.productos],
     };
+  }
+  if (
+    /^ecommerce\/productos\/[^/]+\/colores\/[^/]+\/stock$/.test(pathname)
+    || /^ecommerce\/productos\/[^/]+\/variantes\/[^/]+\/stock$/.test(pathname)
+  ) {
+    return request.nextUrl.searchParams.get("fresh") === "true"
+      ? null
+      : { ttl: CACHE_TTL.stock, tags: [CACHE_TAGS.stock] };
   }
   if (pathname.startsWith("ecommerce/productos/")) {
     return { ttl: CACHE_TTL.productoDetalle, tags: [CACHE_TAGS.detalle] };

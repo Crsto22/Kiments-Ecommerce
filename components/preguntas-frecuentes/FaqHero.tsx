@@ -9,6 +9,7 @@ export function FaqHero() {
           src="/img/banner-4.jpg"
           alt="Fondo Preguntas"
           fill
+          sizes="100vw"
           className="object-cover opacity-50 mix-blend-overlay grayscale"
           priority
         />

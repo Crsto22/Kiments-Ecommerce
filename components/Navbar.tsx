@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -66,12 +67,6 @@ export function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (isSearchOpen) {
-      searchInputRef.current?.focus();
-    }
-  }, [isSearchOpen]);
-
-  useEffect(() => {
     const term = searchTerm.trim();
     if (!isSearchOpen || term.length < 2) {
       return;
@@ -102,6 +97,11 @@ export function Navbar() {
     setSearchTerm("");
     setSearchResults([]);
     setIsSearching(false);
+  };
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
   const goToResult = (item: ProductoItem) => {
@@ -170,12 +170,8 @@ export function Navbar() {
           </Link>
 
           <div className="relative mx-auto w-full sm:max-w-xl">
-            <form
+            <search
               className="flex h-9 w-full items-center border border-black bg-white px-3 text-black"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (searchResults[0]) goToResult(searchResults[0]);
-              }}
             >
               <input
                 ref={searchInputRef}
@@ -188,17 +184,23 @@ export function Navbar() {
                   if (event.key === "Escape") {
                     closeSearch();
                   }
+                  if (event.key === "Enter" && searchResults[0]) {
+                    goToResult(searchResults[0]);
+                  }
                 }}
                 className="h-full min-w-0 flex-1 bg-transparent text-sm font-light outline-none placeholder:text-black/45"
               />
               <button
-                type="submit"
+                type="button"
+                onClick={() => {
+                  if (searchResults[0]) goToResult(searchResults[0]);
+                }}
                 aria-label="Buscar"
                 className="flex size-7 items-center justify-center text-black"
               >
                 <MagnifyingGlass size={19} weight="regular" />
               </button>
-            </form>
+            </search>
 
             {searchTerm.trim().length >= 2 && (
               <div className="absolute left-0 right-0 top-full mt-2 max-h-[70vh] overflow-y-auto border border-black/10 bg-white shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
@@ -264,7 +266,7 @@ export function Navbar() {
             type="button"
             aria-label="Abrir busqueda"
             aria-expanded={isSearchOpen}
-            onClick={() => setIsSearchOpen(true)}
+            onClick={openSearch}
             className={`flex size-9 items-center justify-center rounded-sm transition-colors ${iconText}`}
           >
             <MagnifyingGlass size={24} weight="thin" />
@@ -313,10 +315,12 @@ function SearchResult({
     >
       <span className="relative block size-14 overflow-hidden bg-neutral-100">
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={imageUrl}
             alt={`${item.producto.nombre} ${item.color.nombre}`}
+            fill
+            unoptimized
+            sizes="56px"
             className="h-full w-full object-cover"
           />
         ) : null}

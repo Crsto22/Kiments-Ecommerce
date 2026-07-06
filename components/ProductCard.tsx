@@ -38,8 +38,8 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
       ? buildImageUrl(item.imagenPrincipal.url || item.imagenPrincipal.urlThumb)
       : null;
 
-  const sizes = [...item.variantes]
-    .sort((a, b) => {
+  const sizes = item.variantes
+    .toSorted((a, b) => {
       const na = Number(a.talla.nombre);
       const nb = Number(b.talla.nombre);
       if (!isNaN(na) && !isNaN(nb)) return na - nb;

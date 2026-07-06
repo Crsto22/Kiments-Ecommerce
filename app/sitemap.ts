@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.pe").replace(/\/+$/, "");
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.com.pe").replace(/\/+$/, "");
 const backendUrl = process.env.SPRING_BOOT_BASE_URL?.replace(/\/+$/, "");
 
 interface ProductoListResponse {

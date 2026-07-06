@@ -52,7 +52,7 @@ interface ProductCard {
 
 function mapProductoToCard(item: ProductoItem): ProductCard {
   // Sort variants by talla, try numeric then alpha
-  const sorted = [...item.variantes].sort((a, b) => {
+  const sorted = item.variantes.toSorted((a, b) => {
     const na = Number(a.talla.nombre);
     const nb = Number(b.talla.nombre);
     if (!isNaN(na) && !isNaN(nb)) return na - nb;
@@ -190,6 +190,74 @@ export default function ProductosPage() {
     );
   };
 
+  return (
+    <ProductosView
+      loading={loading}
+      error={error}
+      tiendaConfigurada={tiendaConfigurada}
+      filteredProducts={filteredProducts}
+      products={products}
+      hasActiveFilters={hasActiveFilters}
+      totalElements={totalElements}
+      viewMode={viewMode}
+      setViewMode={setViewMode}
+      pendingSizes={pendingSizes}
+      pendingMaxPrice={pendingMaxPrice}
+      setPendingMaxPrice={setPendingMaxPrice}
+      hasPendingChanges={hasPendingChanges}
+      applyFilters={applyFilters}
+      toggleSize={toggleSize}
+      fetchData={fetchData}
+      page={page}
+      totalPages={totalPages}
+      goToPage={goToPage}
+    />
+  );
+}
+
+interface ProductosViewProps {
+  loading: boolean;
+  error: string | null;
+  tiendaConfigurada: boolean;
+  filteredProducts: ProductCard[];
+  products: ProductCard[];
+  hasActiveFilters: boolean;
+  totalElements: number;
+  viewMode: ViewMode;
+  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+  pendingSizes: string[];
+  pendingMaxPrice: number;
+  setPendingMaxPrice: React.Dispatch<React.SetStateAction<number>>;
+  hasPendingChanges: boolean;
+  applyFilters: () => void;
+  toggleSize: (size: string) => void;
+  fetchData: (pageNum: number) => Promise<void>;
+  page: number;
+  totalPages: number;
+  goToPage: (newPage: number) => void;
+}
+
+function ProductosView({
+  loading,
+  error,
+  tiendaConfigurada,
+  filteredProducts,
+  products,
+  hasActiveFilters,
+  totalElements,
+  viewMode,
+  setViewMode,
+  pendingSizes,
+  pendingMaxPrice,
+  setPendingMaxPrice,
+  hasPendingChanges,
+  applyFilters,
+  toggleSize,
+  fetchData,
+  page,
+  totalPages,
+  goToPage,
+}: Readonly<ProductosViewProps>) {
   const gridColumns =
     viewMode === "compact"
       ? "lg:grid-cols-2"
@@ -388,150 +456,193 @@ export default function ProductosPage() {
             </div>
           )}
 
-          {/* PRODUCT GRID */}
-          {!loading && !error && tiendaConfigurada && (
-            <>
-              <div
-                className={`grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-20 sm:gap-y-14 sm:grid-cols-2 ${gridColumns}`}
-              >
-                {filteredProducts.map((product, index) => (
-                  <article
-                    key={`${product.idProducto}-${product.idColor}`}
-                    className="animate-product-enter"
-                    style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-                  >
-                    <div
-                      className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden bg-white"
-                      style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-                    >
-                      {product.hasImage ? (
-                        <ProductImage src={product.image!} alt={product.name} />
-                      ) : (
-                        <BrandPlaceholder />
-                      )}
-                      <Link
-                        href={`/productos/${product.slug}?color=${product.idColor}`}
-                        className="absolute inset-0 z-10"
-                        aria-label={`Ver ${product.name}`}
-                      />
-                      <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                        <Link
-                          href={`/productos/${product.slug}?color=${product.idColor}`}
-                          aria-label="Ver producto"
-                          className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-                        >
-                          <Eye size={18} weight="regular" />
-                        </Link>
-                      </div>
-                      {product.estadoStock === "AGOTADO" && (
-                        <span className="absolute left-0 top-4 z-20 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                          Agotado
-                        </span>
-                      )}
-                      {product.estadoStock === "PARCIAL" && (
-                        <span className="absolute left-0 top-4 z-20 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                          Pocas unidades
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-4">
-                      <Link href={`/productos/${product.slug}`}>
-                        <h2 className="text-sm font-light uppercase leading-tight transition-colors hover:text-black/60">
-                          {product.name}
-                        </h2>
-                      </Link>
-
-                      {/* Color swatch */}
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="color-tooltip shrink-0">
-                          <span
-                            aria-label={`Color: ${product.colorName}`}
-                            className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
-                            style={{ backgroundColor: product.colorHex }}
-                          />
-                          <span className="color-tooltip-bubble">{product.colorName}</span>
-                        </span>
-                        <span className="text-[11px] font-light text-black/50 uppercase">
-                          {product.colorName}
-                        </span>
-                      </div>
-
-                      {/* Price */}
-                      <p className="mt-2 text-sm font-light">{product.priceLabel}</p>
-
-                      {/* Size pills */}
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {product.sizes.map((size) => (
-                          <span
-                            key={size.label}
-                            className={`inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[10px] font-light uppercase ${
-                              size.disponible
-                                ? "border-black/20 text-black/70"
-                                : "border-black/5 text-black/25 line-through"
-                            }`}
-                            title={
-                              size.disponible
-                                ? `${size.stock} en stock`
-                                : "Agotado"
-                            }
-                          >
-                            {size.label}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              {/* No filter results */}
-              {filteredProducts.length === 0 && hasActiveFilters && (
-                <p className="mt-20 text-center text-sm font-light">
-                  No hay productos con esos filtros.
-                </p>
-              )}
-
-              {/* Completely empty */}
-              {products.length === 0 && !hasActiveFilters && (
-                <p className="mt-20 text-center text-sm font-light">
-                  No hay productos disponibles en este momento.
-                </p>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-14 flex items-center justify-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => goToPage(page - 1)}
-                    disabled={page === 0}
-                    className="flex items-center gap-1.5 text-[13px] font-light text-black/50 transition-colors hover:text-black disabled:opacity-25 disabled:cursor-not-allowed"
-                  >
-                    <CaretLeft size={14} weight="bold" />
-                    Anterior
-                  </button>
-
-                  <span className="text-[13px] font-light tabular-nums text-black/50">
-                    {page + 1} de {totalPages}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => goToPage(page + 1)}
-                    disabled={page >= totalPages - 1}
-                    className="flex items-center gap-1.5 text-[13px] font-light text-black/50 transition-colors hover:text-black disabled:opacity-25 disabled:cursor-not-allowed"
-                  >
-                    Siguiente
-                    <CaretRight size={14} weight="bold" />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+          <ProductResults
+            loading={loading}
+            error={error}
+            tiendaConfigurada={tiendaConfigurada}
+            filteredProducts={filteredProducts}
+            products={products}
+            hasActiveFilters={hasActiveFilters}
+            gridColumns={gridColumns}
+            page={page}
+            totalPages={totalPages}
+            goToPage={goToPage}
+          />
         </section>
       </div>
     </main>
+  );
+}
+
+interface ProductResultsProps {
+  loading: boolean;
+  error: string | null;
+  tiendaConfigurada: boolean;
+  filteredProducts: ProductCard[];
+  products: ProductCard[];
+  hasActiveFilters: boolean;
+  gridColumns: string;
+  page: number;
+  totalPages: number;
+  goToPage: (newPage: number) => void;
+}
+
+function ProductResults({
+  loading,
+  error,
+  tiendaConfigurada,
+  filteredProducts,
+  products,
+  hasActiveFilters,
+  gridColumns,
+  page,
+  totalPages,
+  goToPage,
+}: Readonly<ProductResultsProps>) {
+  return (
+    <>
+      {/* PRODUCT GRID */}
+      {!loading && !error && tiendaConfigurada && (
+        <>
+        <div
+          className={`grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-20 sm:gap-y-14 sm:grid-cols-2 ${gridColumns}`}
+        >
+          {filteredProducts.map((product, index) => (
+            <article
+              key={`${product.idProducto}-${product.idColor}`}
+              className="animate-product-enter"
+              style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+            >
+              <div
+                className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden bg-white"
+                style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+              >
+                {product.hasImage ? (
+                  <ProductImage src={product.image!} alt={product.name} />
+                ) : (
+                  <BrandPlaceholder />
+                )}
+                <Link
+                  href={`/productos/${product.slug}?color=${product.idColor}`}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Ver ${product.name}`}
+                />
+                <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <Link
+                    href={`/productos/${product.slug}?color=${product.idColor}`}
+                    aria-label="Ver producto"
+                    className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
+                  >
+                    <Eye size={18} weight="regular" />
+                  </Link>
+                </div>
+                {product.estadoStock === "AGOTADO" && (
+                  <span className="absolute left-0 top-4 z-20 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    Agotado
+                  </span>
+                )}
+                {product.estadoStock === "PARCIAL" && (
+                  <span className="absolute left-0 top-4 z-20 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    Pocas unidades
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <Link href={`/productos/${product.slug}`}>
+                  <h2 className="text-sm font-light uppercase leading-tight transition-colors hover:text-black/60">
+                    {product.name}
+                  </h2>
+                </Link>
+
+                {/* Color swatch */}
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="color-tooltip shrink-0">
+                    <span
+                      aria-label={`Color: ${product.colorName}`}
+                      className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
+                      style={{ backgroundColor: product.colorHex }}
+                    />
+                    <span className="color-tooltip-bubble">{product.colorName}</span>
+                  </span>
+                  <span className="text-[11px] font-light text-black/50 uppercase">
+                    {product.colorName}
+                  </span>
+                </div>
+
+                {/* Price */}
+                <p className="mt-2 text-sm font-light">{product.priceLabel}</p>
+
+                {/* Size pills */}
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {product.sizes.map((size) => (
+                    <span
+                      key={size.label}
+                      className={`inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[10px] font-light uppercase ${
+                        size.disponible
+                          ? "border-black/20 text-black/70"
+                          : "border-black/5 text-black/25 line-through"
+                      }`}
+                      title={
+                        size.disponible
+                          ? `${size.stock} en stock`
+                          : "Agotado"
+                      }
+                    >
+                      {size.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* No filter results */}
+        {filteredProducts.length === 0 && hasActiveFilters && (
+          <p className="mt-20 text-center text-sm font-light">
+            No hay productos con esos filtros.
+          </p>
+        )}
+
+        {/* Completely empty */}
+        {products.length === 0 && !hasActiveFilters && (
+          <p className="mt-20 text-center text-sm font-light">
+            No hay productos disponibles en este momento.
+          </p>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-14 flex items-center justify-center gap-6">
+            <button
+              type="button"
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 0}
+              className="flex items-center gap-1.5 text-[13px] font-light text-black/50 transition-colors hover:text-black disabled:opacity-25 disabled:cursor-not-allowed"
+            >
+              <CaretLeft size={14} weight="bold" />
+              Anterior
+            </button>
+
+            <span className="text-[13px] font-light tabular-nums text-black/50">
+              {page + 1} de {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="flex items-center gap-1.5 text-[13px] font-light text-black/50 transition-colors hover:text-black disabled:opacity-25 disabled:cursor-not-allowed"
+            >
+              Siguiente
+              <CaretRight size={14} weight="bold" />
+            </button>
+          </div>
+        )}
+        </>
+      )}
+    </>
   );
 }
 

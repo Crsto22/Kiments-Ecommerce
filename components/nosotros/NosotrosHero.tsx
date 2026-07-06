@@ -8,6 +8,7 @@ export function NosotrosHero() {
           src="/img/banner-arriba.jpg"
           alt="Fondo Nosotros"
           fill
+          sizes="100vw"
           className="object-cover opacity-30 mix-blend-multiply"
           priority
         />

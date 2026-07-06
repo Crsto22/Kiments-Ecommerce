@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Script from "next/script";
 import {
   ShoppingCartSimple,
@@ -25,9 +24,11 @@ import {
   FlagBanner,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useCart } from "@/components/CartProvider";
-import { ApiError, buildImageUrl, createEcommercePedido, fetchEcommercePedidoActual, uploadEcommerceComprobante, type EcommercePedidoResponse } from "@/lib/api";
+import { buildImageUrl } from "@/lib/api";
+import { buildPedidoPayload, type CheckoutPedidoFormState } from "@/lib/checkout/buildPedidoPayload";
 import peruUbigeo from "@/lib/peru-ubigeo.json";
+import OrderSummary from "./OrderSummary";
+import { useCheckoutPedido } from "./useCheckoutPedido";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const DNI_REQUIRED_RECEIPT_TOTAL = 700;
@@ -86,48 +87,9 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function secondsUntil(date: string): number {
-  return Math.max(0, Math.floor((new Date(date).getTime() - Date.now()) / 1000));
-}
-
-function getPedidoTokenFromUrl(): string {
-  const url = new URL(window.location.href);
-  const pathToken = url.pathname.startsWith("/pago/") ? url.pathname.split("/")[2] : "";
-  return pathToken ? decodeURIComponent(pathToken) : url.searchParams.get("pedidoToken") ?? "";
-}
-
-function paymentLabel(value: string | null | undefined): string {
-  const normalized = (value ?? "").toUpperCase();
-  if (normalized.includes("YAPE")) return "YAPE";
-  if (normalized.includes("BCP") || normalized.includes("TRANSFERENCIA")) return "BCP";
-  return "";
-}
-
-interface StockIssueState {
-  itemName: string;
-  idProductoVariante: number;
-  available: number;
-  requested: number;
-}
-
-function parseStockIssues(message: string): StockIssueState[] {
-  const matches = message.matchAll(
-    /Stock insuficiente para '(.+?)' \(variante (\d+)\)\. Disponible: (\d+), solicitado: (\d+)/gi,
-  );
-  return Array.from(matches, (match) => ({
-    itemName: match[1],
-    idProductoVariante: Number(match[2]),
-    available: Number(match[3]),
-    requested: Number(match[4]),
-  }));
-}
-
 export default function PagoPage() {
-  const router = useRouter();
-  const { items: cartItems, subtotal: total, clearCart, setQuantity } = useCart();
   const [step, setStep] = useState(1);
   const [stepKey, setStepKey] = useState(0);
-  const [hasMounted, setHasMounted] = useState(false);
 
   // Paso 1 — contacto
   const [docNumber, setDocNumber] = useState("");
@@ -149,12 +111,7 @@ export default function PagoPage() {
 
   // Paso 2 — metodo de pago
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
-  const [createdPedido, setCreatedPedido] = useState<EcommercePedidoResponse | null>(null);
-  const [pedidoToken, setPedidoToken] = useState("");
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [hasCheckedPedidoToken, setHasCheckedPedidoToken] = useState(true);
   const [copiedPaymentValue, setCopiedPaymentValue] = useState("");
-  const [orderError, setOrderError] = useState("");
   const [turnstileLoaded, setTurnstileLoaded] = useState(
     () => typeof window !== "undefined" && Boolean(window.turnstile),
   );
@@ -169,24 +126,9 @@ export default function PagoPage() {
   const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Paso 3 — payment
-  const [orderCode, setOrderCode] = useState("");
-  const [timeLeft, setTimeLeft] = useState(600);
-  const [timerActive, setTimerActive] = useState(false);
-  const [timerExpired, setTimerExpired] = useState(false);
-  const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null);
-  const [voucherFile, setVoucherFile] = useState<File | null>(null);
-  const [voucherPreview, setVoucherPreview] = useState("");
-  const [voucherConfirmed, setVoucherConfirmed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [stockIssues, setStockIssues] = useState<StockIssueState[]>([]);
-  const [isResolvingStockIssue, setIsResolvingStockIssue] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const shouldRecoverPedidoRef = useRef(false);
-  const orderSubmitLockRef = useRef(false);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
   const selectedDepartamento = useMemo(
@@ -197,9 +139,6 @@ export default function PagoPage() {
     () => selectedDepartamento?.provinces.find((item) => item.name === provincia),
     [provincia, selectedDepartamento],
   );
-  const requiresDniForReceipt = total >= DNI_REQUIRED_RECEIPT_TOTAL && !wantsInvoice;
-  const isLimaDelivery = departamento === "Lima" && provincia === "Lima";
-
   const resetTurnstile = useCallback(() => {
     setTurnstileToken("");
     if (turnstileWidgetRef.current) {
@@ -218,51 +157,57 @@ export default function PagoPage() {
     setTurnstileToken("");
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      const token = getPedidoTokenFromUrl();
-      if (token) {
-        shouldRecoverPedidoRef.current = true;
-        setPedidoToken(token);
-        setIsCreatingOrder(true);
-        setHasCheckedPedidoToken(false);
-      }
-      setHasMounted(true);
-    });
-
-    return () => {
-      cancelled = true;
-    };
+  const handlePedidoRecovered = useCallback(() => {
+    setStep(3);
   }, []);
 
-  useEffect(() => {
-    if (!shouldRecoverPedidoRef.current || !pedidoToken) {
-      return;
-    }
-    shouldRecoverPedidoRef.current = false;
-    fetchEcommercePedidoActual(pedidoToken)
-      .then((pedido) => {
-        setCreatedPedido(pedido);
-        setOrderCode(pedido.codigo);
-        setSelectedPaymentMethod(paymentLabel(pedido.metodoPago));
-        const seconds = secondsUntil(pedido.reservaExpiraAt);
-        setExpiresAtMs(new Date(pedido.reservaExpiraAt).getTime());
-        setTimeLeft(seconds);
-        setTimerExpired(pedido.estado === "CANCELADO_POR_TIEMPO" || seconds <= 0);
-        setTimerActive(pedido.estado === "ESPERANDO_COMPROBANTE" && seconds > 0);
-        setIsSuccess(pedido.estado === "PAGO_EN_REVISION");
-        setStep(3);
-      })
-      .catch((error) => {
-        setOrderError(error instanceof ApiError ? error.message : "No se pudo recuperar el pedido");
-      })
-      .finally(() => {
-        setIsCreatingOrder(false);
-        setHasCheckedPedidoToken(true);
-      });
-  }, [pedidoToken]);
+  const handlePedidoReserved = useCallback(() => {
+    setStep(3);
+    setStepKey((prev) => prev + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const {
+    cartItems,
+    total,
+    hasMounted,
+    createdPedido,
+    pedidoToken,
+    hasCheckedPedidoToken,
+    orderError,
+    orderCode,
+    timeLeft,
+    timerActive,
+    timerExpired,
+    voucherFile,
+    voucherPreview,
+    voucherConfirmed,
+    setVoucherConfirmed,
+    isCreatingOrder,
+    isSubmitting,
+    isSuccess,
+    stockIssues,
+    cartAdjustmentNotice,
+    isValidatingCart,
+    cartValidated,
+    activePaymentMethod,
+    fileInputRef,
+    reservePedido,
+    retryCartValidation,
+    dismissCartAdjustmentNotice,
+    stopTimer,
+    handleFileChange,
+    removeVoucherFile: handleRemoveFile,
+    submitPayment: handleSubmitPayment,
+  } = useCheckoutPedido({
+    selectedPaymentMethod,
+    onRecoveredPaymentMethod: setSelectedPaymentMethod,
+    onPedidoRecovered: handlePedidoRecovered,
+    onPedidoReserved: handlePedidoReserved,
+    onResetTurnstile: resetTurnstile,
+  });
+  const requiresDniForReceipt = total >= DNI_REQUIRED_RECEIPT_TOTAL && !wantsInvoice;
+  const isLimaDelivery = departamento === "Lima" && provincia === "Lima";
 
   useEffect(() => {
     if (showMobileSummary) {
@@ -304,30 +249,6 @@ export default function PagoPage() {
     }
     removeTurnstile();
   }, [step, removeTurnstile]);
-
-  // Timer effect
-  useEffect(() => {
-    if (!timerActive || !expiresAtMs) {
-      return;
-    }
-    const syncTimer = () => {
-      const nextSeconds = Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000));
-      setTimeLeft(nextSeconds);
-      if (nextSeconds <= 0) {
-        setTimerExpired(true);
-        setTimerActive(false);
-      }
-    };
-    syncTimer();
-    const interval = setInterval(() => {
-      syncTimer();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timerActive, expiresAtMs]);
-
-  useEffect(() => {
-    if (timerExpired) clearCart();
-  }, [timerExpired, clearCart]);
 
   const validateStep1 = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -389,101 +310,34 @@ export default function PagoPage() {
   }, [selectedPaymentMethod, turnstileToken]);
 
   const handleGoToStep2 = () => {
+    if (isValidatingCart || !cartValidated || stockIssues.length > 0) return;
     if (!validateStep1()) return;
     setStep(2);
     setStepKey((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const createPedidoFromItems = async (
-    itemsToCreate: typeof cartItems,
-  ) => {
-    setOrderError("");
-    setIsCreatingOrder(true);
-    try {
-      const pedido = await createEcommercePedido({
-        cliente: {
-          dni: docNumber.trim() ? docNumber : undefined,
-          nombres: firstName,
-          apellidos: lastName,
-          correo: email,
-          telefono: phone,
-          deseaFactura: wantsInvoice,
-          ruc: wantsInvoice ? rucNumber : undefined,
-        },
-        envio: {
-          tipo: shippingType === "delivery" ? "DELIVERY" : "PICKUP",
-          direccion: address,
-          referencia,
-          departamento,
-          provincia,
-          distrito,
-          tarifa: shippingRate.toUpperCase(),
-        },
-        metodoPago: selectedPaymentMethod as "YAPE" | "BCP",
-        items: itemsToCreate.map((item) => ({
-          idProductoVariante: item.idProductoVariante,
-          cantidad: item.quantity,
-        })),
-        turnstileToken: turnstileToken || undefined,
-      });
-      setCreatedPedido(pedido);
-      if (pedido.comprobanteToken) {
-        setPedidoToken(pedido.comprobanteToken);
-        router.replace(`/pago/${encodeURIComponent(pedido.comprobanteToken)}`);
-      }
-      setOrderCode(pedido.codigo);
-      setExpiresAtMs(new Date(pedido.reservaExpiraAt).getTime());
-      setTimeLeft(secondsUntil(pedido.reservaExpiraAt));
-      setTimerActive(true);
-      setTimerExpired(false);
-      setStep(3);
-      setStepKey((prev) => prev + 1);
-      clearCart();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return true;
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : "No se pudo crear el pedido";
-      const parsedStockIssues = parseStockIssues(message);
-      if (parsedStockIssues.length > 0) {
-        setStockIssues(parsedStockIssues);
-      } else {
-        setOrderError(message);
-      }
-      resetTurnstile();
-      return false;
-    } finally {
-      setIsCreatingOrder(false);
-    }
-  };
-
   const handleGoToStep3 = async () => {
-    if (orderSubmitLockRef.current || isCreatingOrder) return;
-    orderSubmitLockRef.current = true;
-    try {
-      if (!validateStep2()) return;
-      await createPedidoFromItems(cartItems);
-    } finally {
-      orderSubmitLockRef.current = false;
-    }
-  };
-
-  const hasCartItemsAvailableAfterAdjustment = cartItems.some((item) => {
-    const issue = stockIssues.find(
-      (stockIssue) => stockIssue.idProductoVariante === item.idProductoVariante,
-    );
-    return (issue ? issue.available : item.quantity) > 0;
-  });
-
-  const handleAcceptAvailableStock = () => {
-    if (stockIssues.length === 0) return;
-    setIsResolvingStockIssue(true);
-    for (const issue of stockIssues) {
-      setQuantity(issue.idProductoVariante, issue.available, issue.available);
-    }
-    setOrderError("");
-    setStockIssues([]);
-    setIsResolvingStockIssue(false);
+    if (!validateStep2()) return;
+    const pedidoForm: CheckoutPedidoFormState = {
+      docNumber,
+      firstName,
+      lastName,
+      email,
+      phone,
+      wantsInvoice,
+      rucNumber,
+      shippingType,
+      address,
+      referencia,
+      departamento,
+      provincia,
+      distrito,
+      shippingRate,
+      selectedPaymentMethod,
+      turnstileToken,
+    };
+    await reservePedido(buildPedidoPayload(pedidoForm, cartItems));
   };
 
   const handleBackToStep1 = () => {
@@ -495,51 +349,8 @@ export default function PagoPage() {
   const handleBackToStep2 = () => {
     setStep(2);
     setStepKey((prev) => prev + 1);
-    setTimerActive(false);
+    stopTimer();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setVoucherFile(file);
-    setVoucherConfirmed(false);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setVoucherPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveFile = () => {
-    setVoucherFile(null);
-    setVoucherPreview("");
-    setVoucherConfirmed(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleSubmitPayment = async () => {
-    if (!voucherFile || !createdPedido || !pedidoToken) return;
-    setIsSubmitting(true);
-    setOrderError("");
-    try {
-      const pedido = await uploadEcommerceComprobante(pedidoToken, voucherFile);
-      setCreatedPedido(pedido);
-      setOrderCode(pedido.codigo);
-      setTimerActive(false);
-      if (pedido.estado === "CANCELADO_POR_TIEMPO") {
-        setTimerExpired(true);
-        setOrderError("La reserva venció. Genera un nuevo pedido.");
-        return;
-      }
-      setIsSuccess(true);
-    } catch (error) {
-      setOrderError(error instanceof ApiError ? error.message : "No se pudo subir el comprobante");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const copyPaymentValue = (value?: string) => {
@@ -564,7 +375,6 @@ export default function PagoPage() {
     }
   };
 
-  const activePaymentMethod = selectedPaymentMethod || paymentLabel(createdPedido?.metodoPago);
   const selectedPayment = paymentMethods.find((m) => m.label === activePaymentMethod);
   const payableTotal = createdPedido?.total ?? total;
   const recoveryUrl = hasMounted && pedidoToken ? `${window.location.origin}/pago/${encodeURIComponent(pedidoToken)}` : "";
@@ -644,6 +454,15 @@ export default function PagoPage() {
         >
           Ver productos
         </Link>
+      </main>
+    );
+  }
+
+  if (isValidatingCart && !createdPedido) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">
+        <Spinner size={28} className="animate-spin text-black/40" />
+        <p className="mt-4 text-sm font-light text-black/50">Validando stock y precios...</p>
       </main>
     );
   }
@@ -775,34 +594,7 @@ export default function PagoPage() {
       }`}>
           {/* Scrollable products */}
           <div className="space-y-4 pb-2">
-            {summaryItems.map((item) => (
-              <div key={item.key} className="flex items-center gap-4">
-                <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-black/10 bg-white">
-                  {item.image ? (
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      unoptimized
-                      sizes="64px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[9px] uppercase tracking-[0.16em] text-black/25">
-                      KIMENTS
-                    </div>
-                  )}
-                  <span className="absolute right-0 top-0 flex size-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-medium text-white">
-                    {item.quantity}
-                  </span>
-                </div>
-                <div className="flex-1 text-sm font-light min-w-0">
-                  <p className="font-medium text-black truncate">{item.name}</p>
-                  <p className="text-black/60 truncate">{item.colorName} / {item.sizeName}</p>
-                </div>
-                <div className="text-sm font-medium shrink-0">S/ {item.subtotal.toFixed(2)}</div>
-              </div>
-            ))}
+            <OrderSummary items={summaryItems} />
           </div>
 
           {/* Static totals */}
@@ -842,34 +634,7 @@ export default function PagoPage() {
           <div className="flex flex-col h-full px-10 py-12">
             {/* Scrollable products */}
             <div className="flex-1 overflow-y-auto space-y-4 pb-2 pr-1">
-              {summaryItems.map((item) => (
-                <div key={item.key} className="flex items-center gap-4">
-                  <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-black/10 bg-white">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        unoptimized
-                        sizes="64px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[9px] uppercase tracking-[0.16em] text-black/25">
-                        KIMENTS
-                      </div>
-                    )}
-                    <span className="absolute right-0 top-0 flex size-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-medium text-white">
-                      {item.quantity}
-                    </span>
-                  </div>
-                  <div className="flex-1 text-sm font-light min-w-0">
-                    <p className="font-medium text-black truncate">{item.name}</p>
-                    <p className="text-black/60 truncate">{item.colorName} / {item.sizeName}</p>
-                  </div>
-                  <div className="text-sm font-medium shrink-0">S/ {item.subtotal.toFixed(2)}</div>
-                </div>
-              ))}
+              <OrderSummary items={summaryItems} />
             </div>
 
             {/* Static totals */}
@@ -901,11 +666,12 @@ export default function PagoPage() {
                 {recoveryQrUrl && (
                   <div className="mt-4 flex items-start gap-4 rounded-md border border-[#dbe3f0] bg-white p-3">
                     <div className="shrink-0 rounded-md border border-[#dbe3f0] bg-white p-2">
-                      <img
+                      <Image
                         src={recoveryQrUrl}
                         alt="QR para subir comprobante desde celular"
                         width={96}
                         height={96}
+                        unoptimized
                         className="size-24 object-contain"
                       />
                     </div>
@@ -1038,7 +804,7 @@ export default function PagoPage() {
 
             {/* ==================== PASO 1: INFORMACION ==================== */}
             {step === 1 && (
-              <form className="space-y-10" onSubmit={(e) => { e.preventDefault(); handleGoToStep2(); }}>
+              <div className="space-y-10">
 
                 {/* Informacion de contacto */}
                 <section>
@@ -1274,9 +1040,12 @@ export default function PagoPage() {
                                 <p className="mt-0.5 text-[12px] text-black/50">El costo se coordina al interno</p>
                               </div>
                             </div>
-                            <img
+                            <Image
                               src="/img/metodo-envio/SHALOM.png"
                               alt="Shalom"
+                              width={96}
+                              height={32}
+                              unoptimized
                               className="h-8 w-auto shrink-0 object-contain"
                             />
                           </label>
@@ -1301,9 +1070,12 @@ export default function PagoPage() {
                                 <p className="mt-0.5 text-[12px] text-black/50">El costo se coordina al interno</p>
                               </div>
                             </div>
-                            <img
+                            <Image
                               src="/img/metodo-envio/OLVA.png"
                               alt="Olva"
+                              width={96}
+                              height={32}
+                              unoptimized
                               className="h-8 w-auto shrink-0 object-contain"
                             />
                           </label>
@@ -1335,9 +1107,12 @@ export default function PagoPage() {
                                 </p>
                               </div>
                             </div>
-                            <img
+                            <Image
                               src="/img/metodo-envio/Motorizado.png"
                               alt="Motorizado"
+                              width={96}
+                              height={32}
+                              unoptimized
                               className="h-8 w-auto shrink-0 object-contain"
                             />
                           </label>
@@ -1415,21 +1190,38 @@ export default function PagoPage() {
 
                 {/* Submit Step 1 */}
                 <div className="pt-2">
+                  {orderError && !createdPedido && (
+                    <div className="mb-3 rounded-md border border-red-100 bg-red-50 px-4 py-3 text-[12px] text-red-700">
+                      <p className="flex items-center gap-1.5">
+                        <XCircle size={14} /> {orderError}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={retryCartValidation}
+                        disabled={isValidatingCart}
+                        className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-red-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-red-300"
+                      >
+                        Reintentar validación
+                      </button>
+                    </div>
+                  )}
                   <button
-                    type="submit"
-                    className="flex h-[56px] w-full items-center justify-center gap-2 rounded-md bg-black px-6 text-[15px] font-medium tracking-wide text-white transition-all hover:bg-black/80 active:scale-[0.98]"
+                    type="button"
+                    onClick={handleGoToStep2}
+                    disabled={isValidatingCart || !cartValidated || stockIssues.length > 0}
+                    className="flex h-[56px] w-full items-center justify-center gap-2 rounded-md bg-black px-6 text-[15px] font-medium tracking-wide text-white transition-all hover:bg-black/80 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-black/30"
                   >
                     Siguiente
                     <CaretRight size={18} weight="bold" />
                   </button>
                 </div>
 
-              </form>
+              </div>
             )}
 
             {/* ==================== PASO 2: PAGO ==================== */}
             {step === 2 && (
-              <form className="space-y-10" onSubmit={(e) => { e.preventDefault(); handleGoToStep3(); }}>
+              <div className="space-y-10">
                 {/* Back button */}
                 <button
                   type="button"
@@ -1567,8 +1359,9 @@ export default function PagoPage() {
                     </p>
                   )}
                   <button
-                    type="submit"
-                    disabled={isCreatingOrder || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
+                    type="button"
+                    onClick={handleGoToStep3}
+                    disabled={isCreatingOrder || isValidatingCart || !cartValidated || stockIssues.length > 0 || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
                     className="flex h-[56px] w-full items-center justify-center gap-2 rounded-md bg-black px-6 text-[15px] font-medium tracking-wide text-white transition-all hover:bg-black/80 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-black/30"
                   >
                     {isCreatingOrder ? (
@@ -1585,7 +1378,7 @@ export default function PagoPage() {
                   </button>
                 </div>
 
-              </form>
+              </div>
             )}
 
             {/* ==================== PASO 3: VERIFICACION ==================== */}
@@ -1636,11 +1429,12 @@ export default function PagoPage() {
                       <div className="mx-auto flex max-w-[420px] flex-col items-center gap-8 lg:flex-row lg:items-center lg:justify-center lg:text-left">
                         <div className="flex max-w-[205px] flex-col items-center">
                           <div className="relative rounded-xl bg-white p-3 shadow-sm">
-                            <img
+                            <Image
                               src={YAPE_QR_URL}
                               alt="QR de Yape"
                               width={155}
                               height={155}
+                              unoptimized
                               className="size-[155px] object-contain"
                             />
                             <div className="absolute -bottom-4 left-1/2 flex h-8 -translate-x-1/2 items-center justify-center whitespace-nowrap rounded-full bg-[#12c8b8] px-4 text-[12px] font-semibold text-white shadow-sm">
@@ -1926,7 +1720,7 @@ export default function PagoPage() {
           </div>
         </div>
       )}
-      {stockIssues.length > 0 && (
+      {cartAdjustmentNotice.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-10 mx-6 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl animate-[checkout-success-pop_300ms_ease-out]">
@@ -1934,25 +1728,32 @@ export default function PagoPage() {
               <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-amber-50">
                 <WarningCircle size={32} weight="fill" className="text-amber-500" />
               </div>
-              <h3 className="mb-1 text-lg font-medium text-[#222]">No hay stock suficiente</h3>
+              <h3 className="mb-1 text-lg font-medium text-[#222]">Actualizamos tu carrito</h3>
               <p className="mb-4 text-[13px] text-black/50">
-                Revisa los productos afectados antes de continuar.
+                Algunos productos ya no tienen el mismo stock disponible.
               </p>
               <ul className="mb-6 w-full space-y-2 text-left">
-                {stockIssues.map((issue) => (
-                  <li
-                    key={issue.idProductoVariante}
-                    className="flex items-start gap-2 text-[13px] text-black/70"
-                  >
-                    <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
-                    <span>
-                      <span className="font-medium text-black">{issue.itemName}</span>
-                      {" · "}Solicitado: {issue.requested}
-                      {" · "}Disponible: {issue.available}
-                    </span>
-                  </li>
-                ))}
-                {!hasCartItemsAvailableAfterAdjustment ? (
+                {cartAdjustmentNotice.map((issue) => {
+                  const adjustedQuantity = Math.min(issue.requested, issue.available);
+                  return (
+                    <li
+                      key={issue.idProductoVariante}
+                      className="flex items-start gap-2 text-[13px] text-black/70"
+                    >
+                      <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
+                      <span>
+                        <span className="font-medium text-black">{issue.itemName}</span>
+                        {" - "}Solicitado: {issue.requested}
+                        {" - "}Disponible: {issue.available}
+                        {" - "}
+                        {issue.available <= 0
+                          ? "Se quit? del carrito porque no hay stock."
+                          : `Se ajust? a ${adjustedQuantity} unidad${adjustedQuantity === 1 ? "" : "es"}.`}
+                      </span>
+                    </li>
+                  );
+                })}
+                {cartItems.length === 0 ? (
                   <li className="flex items-start gap-2 text-[13px] text-black/70">
                     <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
                     <span>No hay stock disponible para continuar con el pago.</span>
@@ -1960,27 +1761,27 @@ export default function PagoPage() {
                 ) : (
                   <li className="flex items-start gap-2 text-[13px] text-black/70">
                     <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
-                    <span>Podemos continuar con lo disponible y mantener en el carrito los otros productos que sí tienen stock.</span>
+                    <span>Ya quitamos los productos sin stock y actualizamos lo disponible.</span>
                   </li>
                 )}
               </ul>
               <div className="flex w-full flex-col gap-3">
-                {hasCartItemsAvailableAfterAdjustment ? (
+                {cartItems.length > 0 ? (
                   <button
                     type="button"
-                    onClick={handleAcceptAvailableStock}
-                    disabled={isResolvingStockIssue}
-                    className="flex h-[44px] w-full items-center justify-center rounded-md bg-black text-[13px] font-medium tracking-wide text-white transition-colors hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/30"
+                    onClick={dismissCartAdjustmentNotice}
+                    className="flex h-[44px] w-full items-center justify-center rounded-md bg-black text-[13px] font-medium tracking-wide text-white transition-colors hover:bg-black/80"
                   >
-                    {isResolvingStockIssue ? "Actualizando..." : "Seleccionar esos productos"}
+                    Entendido
                   </button>
-                ) : null}
-                <Link
-                  href="/"
-                  className="flex h-[44px] w-full items-center justify-center rounded-md border border-black/15 bg-white text-[13px] font-medium tracking-wide text-black transition-colors hover:bg-black/5"
-                >
-                  Regresar al inicio
-                </Link>
+                ) : (
+                  <Link
+                    href="/"
+                    className="flex h-[44px] w-full items-center justify-center rounded-md border border-black/15 bg-white text-[13px] font-medium tracking-wide text-black transition-colors hover:bg-black/5"
+                  >
+                    Regresar al inicio
+                  </Link>
+                )}
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildImageUrl } from "@/lib/api";
@@ -20,8 +21,9 @@ const fallbackSlides = [
 ];
 
 const AUTOPLAY_DELAY = 6000;
+const EMPTY_PORTADAS: EcommercePortada[] = [];
 
-export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
+export function Hero({ portadas = EMPTY_PORTADAS }: { portadas?: EcommercePortada[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const slides = useMemo(
     () => portadas.length
@@ -54,11 +56,13 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
     <section className="relative w-full bg-black">
       <Link href="/productos" aria-label="Ver productos" className="relative block aspect-square w-full overflow-hidden md:hidden">
         {slides.map((slide, index) => (
-          <img
+          <Image
             key={slide.id}
             src={slide.mobile}
             alt="Portada KIMENTS"
-            decoding="async"
+            fill
+            unoptimized
+            sizes="100vw"
             className={`absolute inset-0 size-full object-cover transition-opacity duration-1000 ease-in-out ${
               index === activeSlideIndex ? "opacity-100" : "opacity-0"
             }`}
@@ -68,11 +72,13 @@ export function Hero({ portadas = [] }: { portadas?: EcommercePortada[] }) {
 
       <Link href="/productos" aria-label="Ver productos" className="relative hidden aspect-[16/9] w-full overflow-hidden md:block">
         {slides.map((slide, index) => (
-          <img
+          <Image
             key={slide.desktop}
             src={slide.desktop}
             alt="Portada KIMENTS"
-            decoding="async"
+            fill
+            unoptimized
+            sizes="100vw"
             className={`absolute inset-0 size-full object-cover transition-opacity duration-1000 ease-in-out ${
               index === activeSlideIndex ? "opacity-100" : "opacity-0"
             }`}

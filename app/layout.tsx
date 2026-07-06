@@ -21,7 +21,7 @@ const kiments = localFont({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.pe";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.com.pe";
 const googleAnalyticsId = "G-07111WXD3V";
 
 export const metadata: Metadata = {
@@ -34,18 +34,18 @@ export const metadata: Metadata = {
   description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
   manifest: "/manifest.webmanifest",
   alternates: {
-    canonical: "/",
+    canonical: siteUrl,
   },
   openGraph: {
     title: "KIMENTS | Tienda de ropa",
     description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
-    url: "/",
+    url: siteUrl,
     siteName: "KIMENTS",
     locale: "es_PE",
     type: "website",
     images: [
       {
-        url: "/img/pwa/logo_pwa.png",
+        url: `${siteUrl}/img/pwa/logo_pwa.png`,
         width: 1000,
         height: 1000,
         alt: "KIMENTS",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KIMENTS | Tienda de ropa",
     description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
-    images: ["/img/pwa/logo_pwa.png"],
+    images: [`${siteUrl}/img/pwa/logo_pwa.png`],
   },
   robots: {
     index: true,

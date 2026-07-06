@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { InstagramLogo } from "@phosphor-icons/react";
+import { InstagramLogo, LockSimple } from "@phosphor-icons/react";
 
 import {
   Carousel,
@@ -96,6 +96,29 @@ export function InstagramCarousel() {
           className="right-4 size-8 border-none sm:size-9"
         />
       </Carousel>
+
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-7 pt-9 text-center sm:flex-row sm:px-10 sm:text-left lg:px-16 xl:px-20">
+        <p className="inline-flex items-center gap-2 text-sm font-light text-black sm:text-[15px]">
+          <LockSimple size={15} weight="regular" />
+          Garantizamos una transaccion 100% segura
+        </p>
+        <div className="flex items-center gap-5">
+          <Image
+            src="/img/metodo-pago/yape1.png"
+            alt="Yape"
+            width={36}
+            height={36}
+            className="size-9 rounded-[9px]"
+          />
+          <Image
+            src="/img/metodo-pago/bcp.svg"
+            alt="BCP"
+            width={72}
+            height={24}
+            className="h-6 w-auto"
+          />
+        </div>
+      </div>
     </section>
   );
 }

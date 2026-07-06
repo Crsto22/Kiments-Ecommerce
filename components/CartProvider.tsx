@@ -2,8 +2,8 @@
 
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -35,6 +35,7 @@ interface CartContextValue {
   subtotal: number;
   addItem: (item: CartItem) => AddCartResult;
   setQuantity: (idProductoVariante: number, quantity: number, stock?: number) => void;
+  updateItem: (idProductoVariante: number, changes: Partial<Pick<CartItem, "quantity" | "stock" | "price">>) => void;
   increase: (idProductoVariante: number) => void;
   decrease: (idProductoVariante: number) => void;
   remove: (idProductoVariante: number) => void;
@@ -190,6 +191,23 @@ export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
     [],
   );
 
+  const updateItem = useCallback(
+    (idProductoVariante: number, changes: Partial<Pick<CartItem, "quantity" | "stock" | "price">>) => {
+      setItems((current) =>
+        current.flatMap((item) => {
+          if (item.idProductoVariante !== idProductoVariante) return [item];
+          const nextStock = isPositiveInteger(changes.stock) ? changes.stock : item.stock;
+          const requestedQuantity = isPositiveInteger(changes.quantity) ? changes.quantity : item.quantity;
+          const nextQuantity = Math.max(0, Math.min(requestedQuantity, nextStock, MAX_CART_QUANTITY_PER_VARIANT));
+          if (nextQuantity <= 0) return [];
+          const nextPrice = typeof changes.price === "number" && changes.price > 0 ? changes.price : item.price;
+          return [{ ...item, stock: nextStock, quantity: nextQuantity, price: nextPrice }];
+        }),
+      );
+    },
+    [],
+  );
+
   const decrease = useCallback((idProductoVariante: number) => {
     setItems((current) =>
       current.flatMap((item) => {
@@ -212,14 +230,14 @@ export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
     const count = items.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    return { items, count, subtotal, addItem, setQuantity, increase, decrease, remove, clearCart };
-  }, [addItem, clearCart, decrease, increase, items, remove, setQuantity]);
+    return { items, count, subtotal, addItem, setQuantity, updateItem, increase, decrease, remove, clearCart };
+  }, [addItem, clearCart, decrease, increase, items, remove, setQuantity, updateItem]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
-  const context = useContext(CartContext);
+  const context = use(CartContext);
   if (!context) {
     throw new Error("useCart debe usarse dentro de CartProvider");
   }

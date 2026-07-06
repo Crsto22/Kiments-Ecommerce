@@ -9,6 +9,7 @@ export function FaqCta() {
           src="/img/banner-ayuda.jpg"
           alt="Fondo Dudas"
           fill
+          sizes="100vw"
           className="object-cover opacity-20 mix-blend-multiply grayscale"
         />
       </div>

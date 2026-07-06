@@ -114,6 +114,41 @@ export interface ProductoDetalleResponse {
   recomendados: ProductoItem[];
 }
 
+export interface ProductoColorStockResponse {
+  idProducto: number;
+  slug: string;
+  color: Color;
+  estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
+  stockTotalColor: number;
+  variantes: VarianteProducto[];
+}
+
+export interface CarritoValidarRequest {
+  items: Array<{
+    idProductoVariante: number;
+    cantidad: number;
+    precio: number;
+  }>;
+}
+
+export interface CarritoValidarItemResponse {
+  idProductoVariante: number;
+  nombre: string;
+  cantidadSolicitada: number;
+  cantidadPermitida: number;
+  cantidadValida: boolean;
+  stock: number;
+  disponible: boolean;
+  precioVigente: number;
+  precioCambiado: boolean;
+  mensaje: string | null;
+}
+
+export interface CarritoValidarResponse {
+  valido: boolean;
+  items: CarritoValidarItemResponse[];
+}
+
 // --- Inicio (GET /inicio) ---
 
 export interface EcommerceInicioResponse {

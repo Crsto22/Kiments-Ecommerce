@@ -8,6 +8,7 @@ export function TermsHero() {
           src="/img/banner-5.jpg"
           alt="Fondo Legal"
           fill
+          sizes="100vw"
           className="object-cover opacity-20 mix-blend-multiply grayscale"
           priority
         />

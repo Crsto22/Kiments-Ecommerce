@@ -24,13 +24,14 @@ import {
   type PointerEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { MAX_CART_QUANTITY_PER_VARIANT, useCart } from "@/components/CartProvider";
 import { ProductCarousel } from "@/components/ProductCarousel";
-import { fetchProductoBySlug, buildImageUrl } from "@/lib/api";
-import type { ProductoDetalleResponse, ColorDetalle, VarianteProducto } from "@/types/producto";
+import { fetchProductoBySlug, fetchProductoColorStock, fetchProductoVarianteStock, buildImageUrl } from "@/lib/api";
+import type { ProductoDetalleResponse, ProductoColorStockResponse, ColorDetalle, VarianteProducto } from "@/types/producto";
 
 interface CartNotice {
   type: "success" | "error";
@@ -90,6 +91,8 @@ export default function ProductoDetallePage() {
   const [addedVariantId, setAddedVariantId] = useState<number | null>(null);
   const [cartNotice, setCartNotice] = useState<CartNotice | null>(null);
   const [addButtonState, setAddButtonState] = useState<AddButtonState>("idle");
+  const [stockLoading, setStockLoading] = useState(false);
+  const [stockError, setStockError] = useState<string | null>(null);
   const buttonStateTimerRef = useRef<number | null>(null);
   const addButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -115,13 +118,15 @@ export default function ProductoDetallePage() {
       fetchProductoBySlug(slug)
         .then((res) => {
           if (cancelled) return;
-          setData(res);
-          setSelectedQuantity(1);
           const colorId = colorParam ? Number(colorParam) : null;
+          let nextColorIndex = 0;
           if (colorId && res.colores.length > 0) {
             const index = res.colores.findIndex((c) => c.color.idColor === colorId);
-            if (index >= 0) setSelectedColorIndex(index);
+            if (index >= 0) nextColorIndex = index;
           }
+          setSelectedColorIndex(nextColorIndex);
+          setData(res);
+          setSelectedQuantity(1);
         })
         .catch((err) => {
           if (cancelled) return;
@@ -156,6 +161,50 @@ export default function ProductoDetallePage() {
 
   const currentColor: ColorDetalle | null =
     data && data.colores.length > 0 ? data.colores[selectedColorIndex] ?? data.colores[0] : null;
+  const currentColorId = currentColor?.color.idColor;
+
+  const applyStockToColor = useCallback((stock: ProductoColorStockResponse) => {
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            colores: prev.colores.map((color) =>
+              color.color.idColor === stock.color.idColor
+                ? {
+                    ...color,
+                    estadoStock: stock.estadoStock,
+                    stockTotalColor: stock.stockTotalColor,
+                    variantes: stock.variantes,
+                  }
+                : color,
+            ),
+          }
+        : prev,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!slug || !currentColorId) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setStockLoading(true);
+      setStockError(null);
+      fetchProductoColorStock(slug, currentColorId)
+        .then((stock) => {
+          if (!cancelled) applyStockToColor(stock);
+        })
+        .catch((err) => {
+          if (!cancelled) setStockError(err instanceof Error ? err.message : "No se pudo verificar stock");
+        })
+        .finally(() => {
+          if (!cancelled) setStockLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, currentColorId, applyStockToColor]);
 
   const images = (currentColor?.imagenes ?? []).filter((img) => img.url || img.urlThumb);
 
@@ -170,19 +219,23 @@ export default function ProductoDetallePage() {
   );
 
   // Flat list of real color images only. Colors without photos use the main placeholder.
-  const allImages = data
-    ? data.colores.flatMap((cd, colorIndex) =>
-        cd.imagenes
-          .filter((img) => img.url || img.urlThumb)
-          .map((img, imageIndex) => ({
-          img,
-          colorIndex,
-          imageIndex,
-          idColor: cd.color.idColor,
-          colorName: cd.color.nombre,
-        }))
-      )
-    : [];
+  const allImages = useMemo(
+    () =>
+      data
+        ? data.colores.flatMap((cd, colorIndex) =>
+            cd.imagenes
+              .filter((img) => img.url || img.urlThumb)
+              .map((img, imageIndex) => ({
+                img,
+                colorIndex,
+                imageIndex,
+                idColor: cd.color.idColor,
+                colorName: cd.color.nombre,
+              })),
+          )
+        : [],
+    [data],
+  );
 
   const activeGalleryIndex = allImages.findIndex(
     (item) =>
@@ -193,6 +246,16 @@ export default function ProductoDetallePage() {
     activeGalleryIndex >= 0 ? allImages[activeGalleryIndex] : null;
 
   const viewerColorName = activeGalleryImage?.colorName ?? currentColor?.color.nombre ?? "";
+
+  const showCartNotice = useCallback((notice: CartNotice) => {
+    setCartNotice(notice);
+    if (addedTimerRef.current) window.clearTimeout(addedTimerRef.current);
+    addedTimerRef.current = window.setTimeout(() => {
+      setAddedVariantId(null);
+      setCartNotice(null);
+      setAddButtonState("idle");
+    }, 1800);
+  }, []);
 
   const getGalleryKey = (idColor: number, imageIndex: number) => `${idColor}-${imageIndex}`;
 
@@ -242,7 +305,7 @@ export default function ProductoDetallePage() {
   );
 
   const variants: VarianteProducto[] = currentColor?.variantes
-    ? [...currentColor.variantes].sort((a, b) => {
+    ? currentColor.variantes.toSorted((a, b) => {
         const na = Number(a.talla.nombre);
         const nb = Number(b.talla.nombre);
         if (!isNaN(na) && !isNaN(nb)) return na - nb;
@@ -338,13 +401,32 @@ export default function ProductoDetallePage() {
       .finished.finally(() => flyingImage.remove());
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!data || !currentColor || !currentVariant || !currentVariant.disponible) {
       return;
     }
 
     setAddButtonState("loading");
-    const quantity = Math.max(1, Math.min(selectedQuantity, currentVariant.stock, MAX_CART_QUANTITY_PER_VARIANT));
+    let freshVariant = currentVariant;
+    try {
+      freshVariant = await fetchProductoVarianteStock(slug, currentVariant.idProductoVariante, { fresh: true });
+    } catch (err) {
+      setAddButtonState("idle");
+      setStockError(err instanceof Error ? err.message : "No se pudo verificar stock");
+      return;
+    }
+    if (!freshVariant.disponible || freshVariant.stock <= 0) {
+      setAddButtonState("idle");
+      showCartNotice({
+        type: "error",
+        title: "Esta talla ya no tiene stock",
+        productName: data.producto.nombre,
+        detail: `${currentColor.color.nombre} / ${freshVariant.talla.nombre}`,
+      });
+      return;
+    }
+
+    const quantity = Math.max(1, Math.min(selectedQuantity, freshVariant.stock, MAX_CART_QUANTITY_PER_VARIANT));
 
     const image =
       currentColor.imagenPrincipal?.origen === "COLOR"
@@ -356,26 +438,26 @@ export default function ProductoDetallePage() {
       const result = addItem({
         idProducto: data.producto.idProducto,
         slug: data.producto.slug,
-        idProductoVariante: currentVariant.idProductoVariante,
+        idProductoVariante: freshVariant.idProductoVariante,
         name: data.producto.nombre,
         colorName: currentColor.color.nombre,
         colorHex: currentColor.color.hex,
-        sizeName: currentVariant.talla.nombre,
-        price: currentVariant.precioVigente,
+        sizeName: freshVariant.talla.nombre,
+        price: freshVariant.precioVigente,
         quantity,
-        stock: currentVariant.stock,
+        stock: freshVariant.stock,
         image,
       });
 
       if (result === "added") {
-        setAddedVariantId(currentVariant.idProductoVariante);
+        setAddedVariantId(freshVariant.idProductoVariante);
         setAddButtonState("success");
         animateAddedImageToCart(image ?? "/ico/KimentsLogo.ico");
       } else {
         setAddButtonState("idle");
       }
 
-      setCartNotice({
+      showCartNotice({
         type: result === "added" ? "success" : "error",
         title:
           result === "added"
@@ -384,15 +466,8 @@ export default function ProductoDetallePage() {
             ? "Tu carrito ya tiene la cantidad máxima de este artículo"
             : "No se pudo agregar el producto",
         productName: data.producto.nombre,
-        detail: `${currentColor.color.nombre} / ${currentVariant.talla.nombre}`,
+        detail: `${currentColor.color.nombre} / ${freshVariant.talla.nombre}`,
       });
-
-      if (addedTimerRef.current) window.clearTimeout(addedTimerRef.current);
-      addedTimerRef.current = window.setTimeout(() => {
-        setAddedVariantId(null);
-        setCartNotice(null);
-        setAddButtonState("idle");
-      }, 1800);
     }, 280);
   };
 
@@ -967,13 +1042,13 @@ export default function ProductoDetallePage() {
                 <button
                   key={v.idProductoVariante}
                   type="button"
-                  disabled={!v.disponible}
+                  disabled={stockLoading || !v.disponible}
                   onClick={() => {
                     setSelectedSize(v.talla.nombre);
                     setSelectedQuantity(1);
                   }}
                   className={`relative flex size-12 overflow-hidden items-center justify-center rounded-md border text-sm font-light transition-colors ${
-                    !v.disponible
+                    stockLoading || !v.disponible
                       ? "border-black/10 bg-gray-50 text-black/30 cursor-not-allowed"
                       : selectedSize === v.talla.nombre
                         ? "border-black bg-white text-black"
@@ -995,6 +1070,11 @@ export default function ProductoDetallePage() {
             {!selectedSize && (
               <p className="mt-2 text-[12px] font-light text-black/30">
                 Selecciona una talla
+              </p>
+            )}
+            {stockError && (
+              <p className="mt-2 text-[12px] font-medium text-red-600">
+                No se pudo verificar stock. Intenta nuevamente.
               </p>
             )}
             {hasLowStock && (
@@ -1024,6 +1104,7 @@ export default function ProductoDetallePage() {
                 disabled={
                   !currentVariant ||
                   !currentVariant.disponible ||
+                  stockLoading ||
                   selectedQuantity >= maxQuantity ||
                   addButtonState === "loading"
                 }
@@ -1038,7 +1119,7 @@ export default function ProductoDetallePage() {
               ref={addButtonRef}
               type="button"
               onClick={handleAddToCart}
-              disabled={!currentVariant || !currentVariant.disponible || addButtonState === "loading"}
+              disabled={!currentVariant || !currentVariant.disponible || stockLoading || addButtonState === "loading"}
               className="flex h-14 flex-1 items-center justify-center gap-2 bg-[#181516] px-4 text-sm font-semibold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:bg-black/25"
             >
               {addButtonState === "loading" ? (

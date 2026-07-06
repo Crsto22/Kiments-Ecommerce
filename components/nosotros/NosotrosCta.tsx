@@ -9,6 +9,7 @@ export function NosotrosCta() {
           src="/img/banner-nosotros2.jpg"
           alt="Viste con proposito fondo"
           fill
+          sizes="100vw"
           className="object-cover opacity-50 mix-blend-overlay grayscale"
         />
         <div className="absolute inset-0 bg-black/50" />

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   Carousel,
@@ -29,10 +30,12 @@ export function HomeProductStories({ imagenesProductos, visible }: HomeProductSt
               >
                 <Link href={`/productos/${item.slug}`} className="block">
                   <figure className="group relative aspect-[3/4] w-full cursor-pointer overflow-hidden bg-[#eee9e2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={imageUrl}
                       alt={item.nombre}
+                      fill
+                      unoptimized
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 75vw"
                       className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-110"
                     />
                     <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-500 ease-out group-hover:bg-black/15" />

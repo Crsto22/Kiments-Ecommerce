@@ -5,6 +5,7 @@ const CACHE_TAGS = [
   "ecommerce:inicio",
   "ecommerce:productos",
   "ecommerce:detalle",
+  "ecommerce:stock",
 ] as const;
 
 export async function POST(request: NextRequest): Promise<Response> {

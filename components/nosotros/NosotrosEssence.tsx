@@ -9,7 +9,7 @@ export function NosotrosEssence() {
         <div className="grid gap-16 lg:grid-cols-2 lg:items-center lg:gap-24">
           <div className="relative order-2 aspect-[4/5] w-full overflow-hidden bg-[#eee9e2] lg:order-1">
             <Image
-              src="/img/productos/Producto01.jpg"
+              src="/img/nosotros-1.png"
               alt="Nuestra Esencia"
               fill
               className="object-cover transition-transform duration-700 hover:scale-105"

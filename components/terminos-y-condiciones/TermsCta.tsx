@@ -10,6 +10,7 @@ export function TermsCta() {
           src="/img/banner-arriba.jpg"
           alt="Fondo Explorar"
           fill
+          sizes="100vw"
           className="object-cover opacity-50 mix-blend-overlay grayscale"
         />
         <div className="absolute inset-0 bg-black/60" />
