@@ -171,8 +171,10 @@ export function useCheckoutPedido({
       const seconds = secondsUntil(pedido.reservaExpiraAt);
       setExpiresAtMs(new Date(pedido.reservaExpiraAt).getTime());
       setTimeLeft(seconds);
+      const expired = pedido.estado === "CANCELADO_POR_TIEMPO"
+        || (pedido.estado === "ESPERANDO_COMPROBANTE" && seconds <= 0);
       setCheckoutStatus({
-        phase: pedido.estado === "CANCELADO_POR_TIEMPO" || seconds <= 0
+        phase: expired
           ? "expirado"
           : pedido.estado === "ESPERANDO_COMPROBANTE"
             ? "esperando_comprobante"

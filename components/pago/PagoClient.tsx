@@ -467,6 +467,70 @@ export default function PagoPage() {
     );
   }
 
+  if (createdPedido?.estado === "CANCELADO") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">
+        <div className="flex flex-col items-center animate-[checkout-success-pop_500ms_ease-out]">
+          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-red-50">
+            <XCircle size={48} weight="fill" className="text-red-500" />
+          </div>
+          <h2 className="mb-2 text-2xl font-medium">Pedido cancelado</h2>
+          <p className="mb-4 max-w-sm text-[14px] text-black/60">
+            Este pedido fue cancelado. Ya no es posible enviar comprobante para este pedido.
+          </p>
+
+          <div className="mt-4 w-full max-w-xs rounded-lg border border-black/10 bg-[#fafafa] p-4 text-left">
+            <p className="mb-1 text-[11px] uppercase tracking-wider text-black/50">Codigo de pedido</p>
+            <p className="text-base font-medium tracking-widest">{orderCode}</p>
+            <p className="mb-1 mt-3 text-[11px] uppercase tracking-wider text-black/50">Total</p>
+            <p className="text-base font-medium">S/ {payableTotal.toFixed(2)}</p>
+            <p className="mb-1 mt-3 text-[11px] uppercase tracking-wider text-black/50">Metodo</p>
+            <p className="text-base font-medium">{activePaymentMethod}</p>
+          </div>
+
+          <Link
+            href="/"
+            className="mt-8 inline-flex h-[52px] items-center justify-center rounded-md bg-black px-10 text-[13px] font-light uppercase tracking-[0.1em] text-white transition-colors hover:bg-black/80"
+          >
+            Volver a inicio
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (createdPedido?.estado === "ACEPTADO") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">
+        <div className="flex flex-col items-center animate-[checkout-success-pop_500ms_ease-out]">
+          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-green-50">
+            <CheckCircle size={48} weight="fill" className="text-green-600" />
+          </div>
+          <h2 className="mb-2 text-2xl font-medium">Pedido aceptado</h2>
+          <p className="mb-4 max-w-sm text-[14px] text-black/60">
+            Tu pedido fue aceptado. En unos momentos te hablaremos para coordinar la entrega.
+          </p>
+
+          <div className="mt-4 w-full max-w-xs rounded-lg border border-black/10 bg-[#fafafa] p-4 text-left">
+            <p className="mb-1 text-[11px] uppercase tracking-wider text-black/50">Codigo de pedido</p>
+            <p className="text-base font-medium tracking-widest">{orderCode}</p>
+            <p className="mb-1 mt-3 text-[11px] uppercase tracking-wider text-black/50">Total pagado</p>
+            <p className="text-base font-medium">S/ {payableTotal.toFixed(2)}</p>
+            <p className="mb-1 mt-3 text-[11px] uppercase tracking-wider text-black/50">Metodo</p>
+            <p className="text-base font-medium">{activePaymentMethod}</p>
+          </div>
+
+          <Link
+            href="/"
+            className="mt-8 inline-flex h-[52px] items-center justify-center rounded-md bg-black px-10 text-[13px] font-light uppercase tracking-[0.1em] text-white transition-colors hover:bg-black/80"
+          >
+            Volver a inicio
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   if (timerExpired && createdPedido) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">

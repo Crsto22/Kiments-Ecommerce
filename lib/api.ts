@@ -154,7 +154,7 @@ export interface EcommercePedidoCreateRequest {
 
 export interface EcommercePedidoResponse {
   codigo: string;
-  estado: "ESPERANDO_COMPROBANTE" | "PAGO_EN_REVISION" | "CANCELADO_POR_TIEMPO";
+  estado: "ESPERANDO_COMPROBANTE" | "PAGO_EN_REVISION" | "CANCELADO_POR_TIEMPO" | "CANCELADO" | "ACEPTADO";
   reservaExpiraAt: string;
   total: number;
   metodoPago?: string | null;
