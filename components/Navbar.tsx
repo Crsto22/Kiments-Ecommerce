@@ -364,6 +364,7 @@ function CartDrawer({
           type="button"
           aria-label="Abrir carrito"
           data-cart-target
+          onClick={(event) => event.currentTarget.blur()}
           className={`flex size-9 items-center justify-center rounded-sm transition-colors ${triggerClassName}`}
         >
           <span className="relative flex items-center justify-center">
