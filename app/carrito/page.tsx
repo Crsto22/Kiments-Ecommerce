@@ -5,7 +5,7 @@ import { useCart } from "@/components/CartProvider";
 import { CartCheckoutBar } from "@/components/carrito/CartCheckoutBar";
 
 export default function CarritoPage() {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, total, descuentoPromocion, comboResumen } = useCart();
 
   return (
     <main className="flex min-h-screen flex-col bg-white pb-40 text-[#171717]">
@@ -15,7 +15,15 @@ export default function CarritoPage() {
         footer={null}
         hideTotals
       />
-      {items.length > 0 && <CartCheckoutBar subtotal={subtotal} />}
+      {items.length > 0 && (
+        <CartCheckoutBar
+          subtotal={subtotal}
+          total={total}
+          descuentoPromocion={descuentoPromocion}
+          combosAplicados={comboResumen?.combosAplicados}
+          combosPendientes={comboResumen?.combosPendientes}
+        />
+      )}
     </main>
   );
 }

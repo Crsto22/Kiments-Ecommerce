@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Basket, CaretLeft } from "@phosphor-icons/react";
+import { Basket, CaretLeft, Tag } from "@phosphor-icons/react";
 import { type ReactNode, useCallback, useState } from "react";
 import { MAX_CART_QUANTITY_PER_VARIANT, useCart } from "@/components/CartProvider";
+import type { CartComboPendiente, CartComboResumen } from "@/components/CartProvider";
 
 interface CartContentProps {
   backHref: string;
@@ -15,9 +16,40 @@ interface CartContentProps {
 
 const EXIT_ANIMATION_MS = 400;
 
+function pendingComboText(combo: CartComboPendiente) {
+  const pending = combo.faltantes?.[0];
+  if (pending) {
+    return `Agrega ${pending.cantidadFaltante} ${pending.nombreProducto} mas para acceder al descuento`;
+  }
+  if (combo.mensaje) {
+    return combo.mensaje.replace(/\s+para\s+.+$/i, " para acceder al descuento");
+  }
+  return combo.regla;
+}
+
+function comboDiscountRows(combos: CartComboResumen[]) {
+  const rows = new Map<string, { label: string; descuento: number }>();
+  for (const combo of combos) {
+    const key = `${combo.nombre}-${combo.regla}`;
+    const row = rows.get(key);
+    rows.set(key, {
+      label: `Descuento ${combo.regla}`,
+      descuento: (row?.descuento ?? 0) + combo.descuento,
+    });
+  }
+  return Array.from(rows.entries());
+}
+
+function pendingComboRows(combos: CartComboPendiente[]) {
+  return Array.from(new Set(combos.map(pendingComboText))).slice(0, 2);
+}
+
 export function CartContent({ backHref, backLabel, footer, hideTotals }: CartContentProps) {
-  const { items, count, subtotal, increase, decrease, remove } = useCart();
+  const { items, count, subtotal, total, descuentoPromocion, comboResumen, increase, decrease, remove } = useCart();
   const [removing, setRemoving] = useState<Set<number>>(new Set());
+  const showSummary = items.length > 0 && !hideTotals;
+  const discountRows = comboDiscountRows(comboResumen?.combosAplicados ?? []);
+  const pendingRows = pendingComboRows(comboResumen?.combosPendientes ?? []);
   const backClassName =
     "inline-flex items-center gap-2 text-[13px] font-light text-black/50 transition-colors hover:text-black";
 
@@ -177,20 +209,46 @@ export function CartContent({ backHref, backLabel, footer, hideTotals }: CartCon
         )}
       </div>
 
-      {items.length > 0 && !hideTotals && (
+      {showSummary && (
         <div className="border-t border-black/10 bg-white px-5 py-6 sm:px-8">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium uppercase tracking-widest">
-              Total
-            </span>
-            <div className="flex items-end gap-2">
-              <span className="mb-0.5 text-[10px] text-black/50">PEN</span>
-              <span className="text-xl font-semibold">
-                S/ {subtotal.toFixed(2)}
-              </span>
+          {!hideTotals && descuentoPromocion > 0 && (
+            <div className="mb-4 space-y-2 border-b border-black/10 pb-4 text-[12px]">
+              <div className="flex items-center justify-between text-black/55">
+                <span>Subtotal</span>
+                <span>S/ {subtotal.toFixed(2)}</span>
+              </div>
+              {discountRows.map(([key, combo]) => (
+                <div key={key} className="flex items-start justify-between gap-4 text-emerald-700">
+                  <span>{combo.label}</span>
+                  <span className="shrink-0">-S/ {combo.descuento.toFixed(2)}</span>
+                </div>
+              ))}
             </div>
-          </div>
-          {footer}
+          )}
+          {pendingRows.length ? (
+            <div className="mb-4 space-y-2 border-b border-black/10 pb-4 text-[12px] text-emerald-700">
+              {pendingRows.map((text) => (
+                <p key={text} className="flex items-start gap-2">
+                  <Tag size={14} weight="bold" className="mt-0.5 shrink-0" />
+                  <span>{text}</span>
+                </p>
+              ))}
+            </div>
+          ) : null}
+          {!hideTotals && (
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium uppercase tracking-widest">
+                Total
+              </span>
+              <div className="flex items-end gap-2">
+                <span className="mb-0.5 text-[10px] text-black/50">PEN</span>
+                <span className="text-xl font-semibold">
+                  S/ {total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+          {!hideTotals && footer}
         </div>
       )}
     </div>

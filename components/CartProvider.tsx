@@ -29,10 +29,49 @@ export interface CartItem {
 
 export type AddCartResult = "added" | "max" | "invalid";
 
+export interface CartComboResumen {
+  idPromocionCombo: number;
+  nombre: string;
+  regla: string;
+  precioNormal: number;
+  precioCombo: number;
+  descuento: number;
+}
+
+export interface CartComboPendiente {
+  idPromocionCombo: number;
+  nombre: string;
+  regla: string;
+  precioCombo?: number;
+  mensaje?: string | null;
+  faltantes?: Array<{ idProducto: number; nombreProducto: string; cantidadFaltante: number }>;
+}
+
+export interface CartResumen {
+  subtotal: number;
+  descuentoPromocion: number;
+  total: number;
+  combosAplicados: CartComboResumen[];
+  combosPendientes: CartComboPendiente[];
+}
+
+export function cartPromotionIds(resumen: CartResumen | null | undefined): number[] {
+  if (!resumen) return [];
+  return Array.from(new Set([
+    ...resumen.combosAplicados.map((combo) => combo.idPromocionCombo),
+    ...resumen.combosPendientes.map((combo) => combo.idPromocionCombo),
+  ].filter((id): id is number => Number.isFinite(id))));
+}
+
 interface CartContextValue {
   items: CartItem[];
   count: number;
   subtotal: number;
+  total: number;
+  descuentoPromocion: number;
+  comboResumen: CartResumen | null;
+  comboResumenLoading: boolean;
+  syncComboResumen: (resumen: CartResumen | null) => void;
   addItem: (item: CartItem) => AddCartResult;
   setQuantity: (idProductoVariante: number, quantity: number, stock?: number) => void;
   updateItem: (idProductoVariante: number, changes: Partial<Pick<CartItem, "quantity" | "stock" | "price">>) => void;
@@ -106,6 +145,8 @@ function loadStoredCart(): CartItem[] {
 export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [comboResumen, setComboResumen] = useState<CartResumen | null>(null);
+  const [comboResumenLoading, setComboResumenLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +164,54 @@ export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [hydrated, items]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!hydrated || items.length === 0) {
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setComboResumen(null);
+        setComboResumenLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const controller = new AbortController();
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setComboResumenLoading(true);
+      fetch("/api/public/ecommerce/pedidos/resumen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            idProductoVariante: item.idProductoVariante,
+            cantidad: item.quantity,
+          })),
+        }),
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          const data = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(data?.message ?? "No se pudo calcular promociones");
+          if (!cancelled) setComboResumen(data as CartResumen);
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          if (!cancelled) setComboResumen(null);
+        })
+        .finally(() => {
+          if (!cancelled) setComboResumenLoading(false);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [hydrated, items]);
 
   const addItem = useCallback((item: CartItem): AddCartResult => {
@@ -225,13 +314,32 @@ export function CartProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
+  const syncComboResumen = useCallback((resumen: CartResumen | null) => setComboResumen(resumen), []);
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const descuentoPromocion = comboResumen?.descuentoPromocion ?? 0;
+    const total = comboResumen?.total ?? subtotal;
 
-    return { items, count, subtotal, addItem, setQuantity, updateItem, increase, decrease, remove, clearCart };
-  }, [addItem, clearCart, decrease, increase, items, remove, setQuantity, updateItem]);
+    return {
+      items,
+      count,
+      subtotal,
+      total,
+      descuentoPromocion,
+      comboResumen,
+      comboResumenLoading,
+      syncComboResumen,
+      addItem,
+      setQuantity,
+      updateItem,
+      increase,
+      decrease,
+      remove,
+      clearCart,
+    };
+  }, [addItem, clearCart, comboResumen, comboResumenLoading, decrease, increase, items, remove, setQuantity, syncComboResumen, updateItem]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

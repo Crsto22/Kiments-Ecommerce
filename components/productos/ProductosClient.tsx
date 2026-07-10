@@ -25,7 +25,7 @@ import {
   Warning,
   Storefront,
 } from "@phosphor-icons/react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { fetchProductos, buildImageUrl } from "@/lib/api";
 import type { ProductoItem } from "@/types/producto";
 
@@ -48,6 +48,7 @@ interface ProductCard {
   colorName: string;
   sizes: { label: string; disponible: boolean; stock: number }[];
   estadoStock: string;
+  comboPrecio: number | null;
 }
 
 function mapProductoToCard(item: ProductoItem): ProductCard {
@@ -76,6 +77,7 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
     item.imagenPrincipal?.origen === "COLOR"
       ? buildImageUrl(item.imagenPrincipal.url || item.imagenPrincipal.urlThumb)
       : null;
+  const combo = item.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
 
   return {
     idProducto: item.producto.idProducto,
@@ -91,6 +93,7 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
     colorName: item.color.nombre,
     sizes,
     estadoStock: item.estadoStock,
+    comboPrecio: combo?.precioCombo ?? null,
   };
 }
 
@@ -168,10 +171,11 @@ export default function ProductosPage() {
 
   const filteredProducts = products;
   const hasActiveFilters = selectedSizes.length > 0 || maxPrice < PRICE_LIMIT;
+  const selectedSizeSet = useMemo(() => new Set(selectedSizes), [selectedSizes]);
 
   const sizesDiffer =
     pendingSizes.length !== selectedSizes.length ||
-    pendingSizes.some((s) => !selectedSizes.includes(s));
+    pendingSizes.some((s) => !selectedSizeSet.has(s));
 
   const hasPendingChanges = pendingMaxPrice !== maxPrice || sizesDiffer;
 
@@ -285,6 +289,7 @@ function ProductosView({
         <div className="px-1">
           <input
             type="range"
+            aria-label="Precio maximo"
             min="0"
             max={PRICE_LIMIT}
             value={pendingMaxPrice}
@@ -347,7 +352,7 @@ function ProductosView({
                     <div className="flex items-center justify-between">
                       <DrawerTitle className="text-xl font-light">Filtros</DrawerTitle>
                       <DrawerClose asChild>
-                        <button aria-label="Cerrar filtros">
+                        <button type="button" aria-label="Cerrar filtros">
                           <X size={24} weight="thin" />
                         </button>
                       </DrawerClose>
@@ -363,6 +368,7 @@ function ProductosView({
                     {hasPendingChanges && (
                       <DrawerClose asChild>
                         <button
+                          type="button"
                           onClick={applyFilters}
                           className="h-12 w-full bg-black text-sm font-light uppercase tracking-widest text-white transition-colors hover:bg-black/80"
                         >
@@ -541,12 +547,18 @@ function ProductResults({
                     Agotado
                   </span>
                 )}
-                {product.estadoStock === "PARCIAL" && (
-                  <span className="absolute left-0 top-4 z-20 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                    Pocas unidades
+                {product.comboPrecio !== null && (
+                  <span className="absolute left-0 top-0 z-20 bg-emerald-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    2 por S/ {product.comboPrecio.toFixed(2)}
                   </span>
                 )}
               </div>
+
+              {product.estadoStock === "PARCIAL" && (
+                <span className="mt-2 inline-flex bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  Pocas unidades
+                </span>
+              )}
 
               <div className="mt-4">
                 <Link href={`/productos/${product.slug}`}>

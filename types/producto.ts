@@ -59,6 +59,33 @@ export interface ProductoInfo {
   guiaTallasThumbUrl: string | null;
 }
 
+export interface PromocionComboProducto {
+  idPromocionCombo: number;
+  nombre: string;
+  regla: string;
+  precioCombo: number;
+  mismoProducto?: boolean;
+}
+
+export interface EcommerceInicioCombo {
+  idPromocionCombo: number;
+  nombre: string;
+  regla: string;
+  precioCombo: number;
+  precioRegularMinimo: number;
+  ahorroMinimo: number;
+  items: EcommerceInicioComboItem[];
+}
+
+export interface EcommerceInicioComboItem {
+  idProducto: number;
+  nombre: string;
+  slug: string;
+  cantidadRequerida: number;
+  imagenGlobalUrl: string | null;
+  imagenGlobalThumbUrl: string | null;
+}
+
 export interface ProductoItem {
   producto: ProductoInfo;
   color: Color;
@@ -68,6 +95,7 @@ export interface ProductoItem {
   estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
   stockTotalColor: number;
   variantes: VarianteProducto[];
+  promocionesCombo?: PromocionComboProducto[];
 }
 
 export interface ProductoListResponse {
@@ -110,6 +138,7 @@ export interface ColorDetalle {
 export interface ProductoDetalleResponse {
   tiendaConfigurada: boolean;
   producto: ProductoInfo;
+  promocionesCombo?: PromocionComboProducto[];
   colores: ColorDetalle[];
   recomendados: ProductoItem[];
 }
@@ -121,6 +150,7 @@ export interface ProductoColorStockResponse {
   estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
   stockTotalColor: number;
   variantes: VarianteProducto[];
+  promocionesCombo?: PromocionComboProducto[];
 }
 
 export interface CarritoValidarRequest {
@@ -129,6 +159,7 @@ export interface CarritoValidarRequest {
     cantidad: number;
     precio: number;
   }>;
+  promocionesEsperadas?: number[];
 }
 
 export interface CarritoValidarItemResponse {
@@ -147,6 +178,30 @@ export interface CarritoValidarItemResponse {
 export interface CarritoValidarResponse {
   valido: boolean;
   items: CarritoValidarItemResponse[];
+  resumen: {
+    subtotal: number;
+    descuentoPromocion: number;
+    total: number;
+    combosAplicados: Array<{
+      idPromocionCombo: number;
+      nombre: string;
+      regla: string;
+      precioNormal: number;
+      precioCombo: number;
+      descuento: number;
+    }>;
+    combosPendientes: Array<{
+      idPromocionCombo: number;
+      nombre: string;
+      regla: string;
+      precioCombo?: number;
+      mensaje?: string | null;
+    }>;
+  };
+  promocionesNoDisponibles: Array<{
+    idPromocionCombo: number;
+    nombre: string;
+  }>;
 }
 
 // --- Inicio (GET /inicio) ---
@@ -157,6 +212,19 @@ export interface EcommerceInicioResponse {
   imagenesProductos: EcommerceInicioImagenProducto[];
   aleatorios: ProductoItem[];
   masVendidos: ProductoItem[];
+  combos: EcommerceInicioCombo[];
+}
+
+export interface EcommercePromocionesResponse {
+  content: EcommerceInicioCombo[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }
 
 export interface EcommerceInicioImagenProducto {

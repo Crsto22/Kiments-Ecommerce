@@ -6,6 +6,7 @@ const SPRING_BOOT_BASE_URL =
 const CACHE_TTL = {
   inicio: 300,
   productos: 300,
+  promociones: 300,
   productoDetalle: 300,
   stock: 10,
   busqueda: 60,
@@ -14,6 +15,7 @@ const CACHE_TTL = {
 const CACHE_TAGS = {
   inicio: "ecommerce:inicio",
   productos: "ecommerce:productos",
+  promociones: "ecommerce:promociones",
   detalle: "ecommerce:detalle",
   stock: "ecommerce:stock",
 } as const;
@@ -37,6 +39,9 @@ function resolveCachePolicy(
       ttl: request.nextUrl.searchParams.has("q") ? CACHE_TTL.busqueda : CACHE_TTL.productos,
       tags: [CACHE_TAGS.productos],
     };
+  }
+  if (pathname === "ecommerce/promociones") {
+    return { ttl: CACHE_TTL.promociones, tags: [CACHE_TAGS.promociones] };
   }
   if (
     /^ecommerce\/productos\/[^/]+\/colores\/[^/]+\/stock$/.test(pathname)

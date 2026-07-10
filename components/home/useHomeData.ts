@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { fetchInicio } from "@/lib/api";
-import type { EcommerceInicioImagenProducto, EcommercePortada, ProductoItem } from "@/types/producto";
+import type { EcommerceInicioCombo, EcommerceInicioImagenProducto, EcommercePortada, ProductoItem } from "@/types/producto";
 
 export function useHomeData() {
   const [aleatorios, setAleatorios] = useState<ProductoItem[]>([]);
+  const [combos, setCombos] = useState<EcommerceInicioCombo[]>([]);
   const [masVendidos, setMasVendidos] = useState<ProductoItem[]>([]);
   const [portadas, setPortadas] = useState<EcommercePortada[]>([]);
   const [imagenesProductos, setImagenesProductos] = useState<EcommerceInicioImagenProducto[]>([]);
@@ -19,8 +20,9 @@ export function useHomeData() {
         setTiendaConfigurada(res.tiendaConfigurada);
         setPortadas(res.portadas ?? []);
         setImagenesProductos(res.imagenesProductos ?? []);
-        setAleatorios(res.aleatorios);
-        setMasVendidos(res.masVendidos);
+        setAleatorios(res.aleatorios ?? []);
+        setCombos(res.combos ?? []);
+        setMasVendidos(res.masVendidos ?? []);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar"))
       .finally(() => setLoading(false));
@@ -28,6 +30,7 @@ export function useHomeData() {
 
   return {
     aleatorios,
+    combos,
     error,
     imagenesProductos,
     loading,

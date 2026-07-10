@@ -32,6 +32,7 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
       : item.precioMinimo === item.precioMaximo
       ? `S/ ${item.precioMinimo.toFixed(2)}`
       : `S/ ${item.precioMinimo.toFixed(2)} - S/ ${item.precioMaximo.toFixed(2)}`;
+  const combo = item.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
 
   const imageUrl =
     item.imagenPrincipal?.origen === "COLOR"
@@ -85,6 +86,11 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
             Pocas unidades
           </span>
         )}
+        {combo && (
+          <span className="absolute left-0 top-0 z-20 bg-emerald-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+            2 por S/ {combo.precioCombo.toFixed(2)}
+          </span>
+        )}
         <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <Link
             href={`/productos/${item.producto.slug}?color=${item.color.idColor}`}
@@ -123,7 +129,6 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
             priceLabel
           )}
         </p>
-
         <div className={`mt-3 flex flex-wrap gap-1.5 ${centered ? "justify-center" : ""}`}>
           {sizes.map((size) => (
             <span

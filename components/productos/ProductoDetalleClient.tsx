@@ -16,6 +16,7 @@ import {
   XCircle,
   Spinner,
   Storefront,
+  Tag,
   Truck,
 } from "@phosphor-icons/react";
 import {
@@ -344,6 +345,8 @@ export default function ProductoDetallePage() {
       ? `S/ ${currentColor.precioMinimo.toFixed(2)}`
       : `S/ ${currentColor.precioMinimo.toFixed(2)} - S/ ${currentColor.precioMaximo.toFixed(2)}`
     : "";
+  const sameProductCombo = data?.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
+  const otherCombos = data?.promocionesCombo?.filter((promo) => !promo.mismoProducto) ?? [];
 
   const addedCurrentVariant =
     currentVariant?.idProductoVariante === addedVariantId;
@@ -977,6 +980,14 @@ export default function ProductoDetallePage() {
             ) : (
               <p className="text-xl font-light">{displayPrice}</p>
             )}
+            {sameProductCombo && (
+              <div className="relative z-40 mt-3 inline-flex items-center gap-2 bg-emerald-700 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
+                <Tag size={14} weight="regular" />
+                <span>
+                  Oferta 2 x S/ {sameProductCombo.precioCombo.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="animate-product-enter mt-7" style={{ animationDelay: "220ms" }}>
@@ -1154,12 +1165,32 @@ export default function ProductoDetallePage() {
 
           {descripcionProducto && (
             <div className="animate-product-enter mt-5 bg-white" style={{ animationDelay: "380ms" }}>
-              <button className="flex w-full items-center justify-between border-b border-black/10 px-3 py-2 text-left text-sm font-light">
+              <button type="button" className="flex w-full items-center justify-between border-b border-black/10 px-3 py-2 text-left text-sm font-light">
                 Descripción
                 <CaretUp size={14} weight="light" />
               </button>
               <div className="px-8 py-4 text-xs font-light leading-6 text-black/75">
                 {descripcionProducto}
+              </div>
+            </div>
+          )}
+          {otherCombos.length > 0 && (
+            <div className="animate-product-enter mt-5 bg-white" style={{ animationDelay: "400ms" }}>
+              <div className="border-b border-black/10 px-3 py-2 text-sm font-light">
+                Producto en promoci&oacute;n:
+              </div>
+              <div className="space-y-3 px-8 py-4 text-xs font-light leading-6 text-black/75">
+                {otherCombos.map((combo) => (
+                  <div key={combo.idPromocionCombo} className="flex items-start gap-2">
+                    <Tag size={15} weight="regular" className="mt-1 shrink-0 text-emerald-700" />
+                    <div className="min-w-0">
+                      <p className="font-medium uppercase tracking-[0.04em] text-black">
+                        Promocion {combo.regla}
+                      </p>
+                      <p className="text-emerald-700">Precio combo S/ {combo.precioCombo.toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -7,6 +7,7 @@ import type {
   CarritoValidarRequest,
   CarritoValidarResponse,
   EcommerceInicioResponse,
+  EcommercePromocionesResponse,
 } from "@/types/producto";
 
 const API_BASE_PATH = "/api/public";
@@ -119,6 +120,16 @@ export async function fetchInicio(): Promise<EcommerceInicioResponse> {
   return apiFetch<EcommerceInicioResponse>("/ecommerce/inicio");
 }
 
+export async function fetchPromociones(
+  params: { page?: number; size?: number } = {},
+): Promise<EcommercePromocionesResponse> {
+  const sp = new URLSearchParams();
+  if (params.page !== undefined) sp.set("page", String(params.page));
+  if (params.size !== undefined) sp.set("size", String(params.size));
+  const qs = sp.toString();
+  return apiFetch<EcommercePromocionesResponse>(`/ecommerce/promociones${qs ? `?${qs}` : ""}`);
+}
+
 export async function validateEcommerceCart(
   payload: CarritoValidarRequest,
 ): Promise<CarritoValidarResponse> {
@@ -149,6 +160,7 @@ export interface EcommercePedidoCreateRequest {
   };
   metodoPago: "YAPE" | "BCP";
   items: Array<{ idProductoVariante: number; cantidad: number }>;
+  promocionesEsperadas?: number[];
   turnstileToken?: string;
 }
 
@@ -156,6 +168,9 @@ export interface EcommercePedidoResponse {
   codigo: string;
   estado: "ESPERANDO_COMPROBANTE" | "PAGO_EN_REVISION" | "CANCELADO_POR_TIEMPO" | "CANCELADO" | "ACEPTADO";
   reservaExpiraAt: string;
+  subtotal?: number;
+  descuentoPromocion?: number;
+  promocionResumen?: string | null;
   total: number;
   metodoPago?: string | null;
   comprobanteUrl: string | null;

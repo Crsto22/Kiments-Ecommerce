@@ -4,6 +4,7 @@ import { type NextRequest } from "next/server";
 const CACHE_TAGS = [
   "ecommerce:inicio",
   "ecommerce:productos",
+  "ecommerce:promociones",
   "ecommerce:detalle",
   "ecommerce:stock",
 ] as const;

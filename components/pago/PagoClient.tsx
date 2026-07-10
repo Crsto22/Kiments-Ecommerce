@@ -25,12 +25,18 @@ import {
 } from "@phosphor-icons/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { buildImageUrl } from "@/lib/api";
+import type { CartComboPendiente } from "@/components/CartProvider";
 import { buildPedidoPayload, type CheckoutPedidoFormState } from "@/lib/checkout/buildPedidoPayload";
 import peruUbigeo from "@/lib/peru-ubigeo.json";
 import OrderSummary from "./OrderSummary";
 import { useCheckoutPedido } from "./useCheckoutPedido";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+function pendingComboText(combo: CartComboPendiente) {
+  if (combo.mensaje) return combo.mensaje;
+  return combo.faltantes?.map((item) => `agrega ${item.cantidadFaltante} ${item.nombreProducto}`).join(", ") ?? combo.regla;
+}
 const DNI_REQUIRED_RECEIPT_TOTAL = 700;
 const YAPE_QR_VALUE = "0002010102113932a9e412a9cb87500ba225068db4a99eb35204561153036045802PE5906YAPERO6004Lima6304FDD4";
 const YAPE_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(YAPE_QR_VALUE)}`;
@@ -169,7 +175,10 @@ export default function PagoPage() {
 
   const {
     cartItems,
+    subtotal,
     total,
+    descuentoPromocion,
+    comboResumen,
     hasMounted,
     createdPedido,
     pedidoToken,
@@ -337,7 +346,10 @@ export default function PagoPage() {
       selectedPaymentMethod,
       turnstileToken,
     };
-    await reservePedido(buildPedidoPayload(pedidoForm, cartItems));
+    await reservePedido(buildPedidoPayload(pedidoForm, cartItems, [
+      ...(comboResumen?.combosAplicados.map((combo) => combo.idPromocionCombo) ?? []),
+      ...(comboResumen?.combosPendientes.map((combo) => combo.idPromocionCombo) ?? []),
+    ]));
   };
 
   const handleBackToStep1 = () => {
@@ -377,6 +389,8 @@ export default function PagoPage() {
 
   const selectedPayment = paymentMethods.find((m) => m.label === activePaymentMethod);
   const payableTotal = createdPedido?.total ?? total;
+  const summarySubtotal = createdPedido ? createdPedido.subtotal ?? createdPedido.total : subtotal;
+  const summaryDiscount = createdPedido ? createdPedido.descuentoPromocion ?? 0 : descuentoPromocion;
   const recoveryUrl = hasMounted && pedidoToken ? `${window.location.origin}/pago/${encodeURIComponent(pedidoToken)}` : "";
   const recoveryQrUrl = recoveryUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(recoveryUrl)}`
@@ -440,7 +454,7 @@ export default function PagoPage() {
     );
   }
 
-  if (cartItems.length === 0 && !createdPedido) {
+  if (cartItems.length === 0 && !createdPedido && cartAdjustmentNotice.length === 0) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center text-[#222]">
         <ShoppingCartSimple size={34} weight="light" className="text-black/25" />
@@ -665,8 +679,23 @@ export default function PagoPage() {
           <div className="mt-4 border-t border-black/10 pt-4 text-sm">
             <div className="flex justify-between py-2 font-light text-black/70">
               <span>Subtotal</span>
-              <span className="text-black font-medium">S/ {summaryTotal.toFixed(2)}</span>
+              <span className="text-black font-medium">S/ {summarySubtotal.toFixed(2)}</span>
             </div>
+            {summaryDiscount > 0 && (
+              <div className="flex justify-between py-2 font-light text-emerald-700">
+                <span>Promo aplicada</span>
+                <span className="font-medium">-S/ {summaryDiscount.toFixed(2)}</span>
+              </div>
+            )}
+            {!createdPedido && comboResumen?.combosPendientes.length ? (
+              <div className="py-2 text-[12px] font-light text-black/50">
+                {comboResumen.combosPendientes.slice(0, 1).map((combo, index) => (
+                  <p key={`${combo.nombre}-${index}`}>
+                    Promo pendiente: {pendingComboText(combo)}
+                  </p>
+                ))}
+              </div>
+            ) : null}
             <div className="flex justify-between py-2 font-light text-black/70">
               <span>Envío</span>
               <span className="text-[12px]">
@@ -705,8 +734,23 @@ export default function PagoPage() {
             <div className="shrink-0 mt-4 border-t border-black/10 pt-4 text-sm">
               <div className="flex justify-between py-2 font-light text-black/70">
                 <span>Subtotal</span>
-                <span className="text-black font-medium">S/ {summaryTotal.toFixed(2)}</span>
+                <span className="text-black font-medium">S/ {summarySubtotal.toFixed(2)}</span>
               </div>
+              {summaryDiscount > 0 && (
+                <div className="flex justify-between py-2 font-light text-emerald-700">
+                  <span>Promo aplicada</span>
+                  <span className="font-medium">-S/ {summaryDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              {!createdPedido && comboResumen?.combosPendientes.length ? (
+                <div className="py-2 text-[12px] font-light text-black/50">
+                  {comboResumen.combosPendientes.slice(0, 1).map((combo, index) => (
+                    <p key={`${combo.nombre}-${index}`}>
+                      Promo pendiente: {pendingComboText(combo)}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
               <div className="flex justify-between py-2 font-light text-black/70">
                 <span>Envío</span>
                 <span className="text-[12px]">
@@ -1794,7 +1838,7 @@ export default function PagoPage() {
               </div>
               <h3 className="mb-1 text-lg font-medium text-[#222]">Actualizamos tu carrito</h3>
               <p className="mb-4 text-[13px] text-black/50">
-                Algunos productos ya no tienen el mismo stock disponible.
+                Algunos productos ya no estan disponibles o cambiaron.
               </p>
               <ul className="mb-6 w-full space-y-2 text-left">
                 {cartAdjustmentNotice.map((issue) => {
@@ -1806,13 +1850,21 @@ export default function PagoPage() {
                     >
                       <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
                       <span>
-                        <span className="font-medium text-black">{issue.itemName}</span>
-                        {" - "}Solicitado: {issue.requested}
-                        {" - "}Disponible: {issue.available}
-                        {" - "}
-                        {issue.available <= 0
-                          ? "Se quit? del carrito porque no hay stock."
-                          : `Se ajust? a ${adjustedQuantity} unidad${adjustedQuantity === 1 ? "" : "es"}.`}
+                        {issue.productUnavailable ? (
+                          <>Producto <span className="font-medium text-black">{issue.itemName}</span> ya no esta disponible.</>
+                        ) : issue.promotionUnavailable ? (
+                          <><span className="font-medium text-black">{issue.itemName}</span>{" - "}{issue.message}</>
+                        ) : (
+                          <>
+                            <span className="font-medium text-black">{issue.itemName}</span>
+                            {" - "}Solicitado: {issue.requested}
+                            {" - "}Disponible: {issue.available}
+                            {" - "}
+                            {issue.available <= 0
+                              ? "Se quit? del carrito porque no hay stock."
+                              : `Se ajust? a ${adjustedQuantity} unidad${adjustedQuantity === 1 ? "" : "es"}.`}
+                          </>
+                        )}
                       </span>
                     </li>
                   );
@@ -1825,7 +1877,11 @@ export default function PagoPage() {
                 ) : (
                   <li className="flex items-start gap-2 text-[13px] text-black/70">
                     <span className="mt-0.5 shrink-0 text-[10px] text-amber-500">-</span>
-                    <span>Ya quitamos los productos sin stock y actualizamos lo disponible.</span>
+                    <span>
+                      {cartAdjustmentNotice.some((issue) => issue.productUnavailable)
+                        ? "Quitamos los productos no disponibles del carrito."
+                        : "Ya quitamos los productos sin stock y actualizamos lo disponible."}
+                    </span>
                   </li>
                 )}
               </ul>
@@ -1840,10 +1896,10 @@ export default function PagoPage() {
                   </button>
                 ) : (
                   <Link
-                    href="/"
+                    href="/productos"
                     className="flex h-[44px] w-full items-center justify-center rounded-md border border-black/15 bg-white text-[13px] font-medium tracking-wide text-black transition-colors hover:bg-black/5"
                   >
-                    Regresar al inicio
+                    Ir a productos
                   </Link>
                 )}
               </div>

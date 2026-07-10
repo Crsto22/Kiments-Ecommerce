@@ -28,7 +28,7 @@ import type { ProductoItem } from "@/types/producto";
 const navItems = [
   { label: "INICIO", href: "/" },
   { label: "PRODUCTOS", href: "/productos" },
-  { label: "NOSOTROS", href: "/nosotros" },
+  { label: "PROMOCIONES", href: "/promociones" },
 ];
 const SEARCH_DEBOUNCE_MS = 1500;
 
@@ -227,14 +227,17 @@ export function Navbar() {
 
       <nav className="relative mx-auto flex h-full max-w-7xl items-center justify-between px-5 sm:px-10 lg:px-16 xl:px-20">
         <div className="flex h-full items-center">
-          <div className="hidden h-full items-center gap-8 sm:flex sm:gap-12 xl:gap-16">
+          <div className="hidden h-full items-center gap-6 sm:flex lg:gap-8 xl:gap-10">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-[12px] font-light leading-none tracking-wide transition-colors lg:text-[14px] xl:text-[16px] ${navText}`}
+                className={`group text-[12px] font-light leading-none tracking-wide transition-colors lg:text-[13px] xl:text-[15px] ${navText}`}
               >
-                {item.label}
+                <span className="relative">
+                  {item.label}
+                  <span className={`absolute -bottom-1 left-0 h-[1px] w-0 transition-all duration-300 group-hover:w-full ${isOverHero ? "bg-white" : "bg-black"}`} />
+                </span>
               </Link>
             ))}
           </div>

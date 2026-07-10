@@ -4,6 +4,7 @@ import { Hero } from "@/components/Hero";
 import { InstagramCarousel } from "@/components/InstagramCarousel";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { HomeBestSellers } from "@/components/home/HomeBestSellers";
+import { HomeComboOffers } from "@/components/home/HomeComboOffers";
 import { HomeProductStories } from "@/components/home/HomeProductStories";
 import { HomeStateSections } from "@/components/home/HomeStateSections";
 import { HomeVideoSection } from "@/components/home/HomeVideoSection";
@@ -12,6 +13,7 @@ import { useHomeData } from "@/components/home/useHomeData";
 export default function Home() {
   const {
     aleatorios,
+    combos,
     error,
     imagenesProductos,
     loading,
@@ -41,6 +43,7 @@ export default function Home() {
       )}
       <HomeVideoSection />
       <HomeBestSellers items={masVendidos} visible={canShowStoreContent && masVendidos.length > 0} />
+      <HomeComboOffers combos={combos} visible={canShowStoreContent && combos.length > 0} />
       <InstagramCarousel />
     </main>
   );

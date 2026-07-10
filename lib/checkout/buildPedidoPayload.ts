@@ -27,6 +27,7 @@ interface CheckoutPedidoItem {
 export function buildPedidoPayload(
   formState: CheckoutPedidoFormState,
   items: CheckoutPedidoItem[],
+  promocionesEsperadas: number[] = [],
 ): EcommercePedidoCreateRequest {
   return {
     cliente: {
@@ -52,6 +53,7 @@ export function buildPedidoPayload(
       idProductoVariante: item.idProductoVariante,
       cantidad: item.quantity,
     })),
+    promocionesEsperadas,
     turnstileToken: formState.turnstileToken || undefined,
   };
 }

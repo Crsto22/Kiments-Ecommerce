@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { useCart } from "@/components/CartProvider";
+import { cartPromotionIds, useCart } from "@/components/CartProvider";
 import {
   ApiError,
   createEcommercePedido,
@@ -22,6 +22,8 @@ export interface StockIssueState {
   price?: number;
   priceChanged?: boolean;
   message?: string | null;
+  promotionUnavailable?: boolean;
+  productUnavailable?: boolean;
 }
 
 interface UseCheckoutPedidoOptions {
@@ -94,6 +96,8 @@ function parseStockIssues(message: string): StockIssueState[] {
 }
 
 function toStockIssue(item: CarritoValidarItemResponse): StockIssueState {
+  const productUnavailable = !item.disponible
+    && (item.mensaje?.toLowerCase().includes("ecommerce") ?? false);
   return {
     itemName: item.nombre,
     idProductoVariante: item.idProductoVariante,
@@ -102,7 +106,19 @@ function toStockIssue(item: CarritoValidarItemResponse): StockIssueState {
     price: item.precioVigente,
     priceChanged: item.precioCambiado,
     message: item.mensaje,
+    productUnavailable,
   };
+}
+
+function toPromotionIssues(items: Array<{ idPromocionCombo: number; nombre: string }>): StockIssueState[] {
+  return items.map((item) => ({
+    itemName: item.nombre,
+    idProductoVariante: -item.idPromocionCombo,
+    available: 0,
+    requested: 0,
+    message: "La promocion ya no esta disponible. Actualizamos el total.",
+    promotionUnavailable: true,
+  }));
 }
 
 export function useCheckoutPedido({
@@ -113,7 +129,17 @@ export function useCheckoutPedido({
   onResetTurnstile,
 }: UseCheckoutPedidoOptions) {
   const router = useRouter();
-  const { items: cartItems, subtotal: total, clearCart, updateItem, remove } = useCart();
+  const {
+    items: cartItems,
+    subtotal,
+    total,
+    descuentoPromocion,
+    comboResumen,
+    syncComboResumen,
+    clearCart,
+    updateItem,
+    remove,
+  } = useCart();
   const [hasMounted, setHasMounted] = useState(false);
   const [createdPedido, setCreatedPedido] = useState<EcommercePedidoResponse | null>(null);
   const [pedidoToken, setPedidoToken] = useState("");
@@ -240,15 +266,29 @@ export function useCheckoutPedido({
           cantidad: item.quantity,
           precio: item.price,
         })),
+        promocionesEsperadas: cartPromotionIds(comboResumen),
       })
         .then((response) => {
           if (cancelled) return;
+          syncComboResumen(response.resumen);
           const issues = response.items
             .filter((item) => !item.disponible || !item.cantidadValida || item.precioCambiado)
             .map(toStockIssue);
-          if (issues.length > 0) {
+          const promotionIssues = toPromotionIssues(response.promocionesNoDisponibles ?? []);
+          if (issues.length > 0 || promotionIssues.length > 0 || !response.valido) {
             syncCartWithStockIssues(issues);
-            setCartAdjustmentNotice(issues);
+            setCartAdjustmentNotice(
+              issues.length > 0 || promotionIssues.length > 0
+                ? [...issues, ...promotionIssues]
+                : [{
+                    itemName: "Carrito actualizado",
+                    idProductoVariante: -1,
+                    available: 0,
+                    requested: 0,
+                    message: "Revisa tu carrito antes de continuar.",
+                    promotionUnavailable: true,
+                  }],
+            );
             setStockIssues([]);
             setCheckoutStatus({ phase: "idle", cartValidated: false });
             return;
@@ -266,7 +306,7 @@ export function useCheckoutPedido({
     return () => {
       cancelled = true;
     };
-  }, [hasMounted, pedidoToken, createdPedido, cartItems, cartValidationRetryKey, syncCartWithStockIssues]);
+  }, [hasMounted, pedidoToken, createdPedido, cartItems, comboResumen, cartValidationRetryKey, syncCartWithStockIssues, syncComboResumen]);
 
   const reservePedido = useCallback(async (payload: EcommercePedidoCreateRequest) => {
     if (orderSubmitLockRef.current || isCreatingOrder) return false;
@@ -276,6 +316,37 @@ export function useCheckoutPedido({
       setOrderError("");
       setCheckoutStatus({ phase: "reservando" });
       try {
+        const validation = await validateEcommerceCart({
+          items: cartItems.map((item) => ({
+            idProductoVariante: item.idProductoVariante,
+            cantidad: item.quantity,
+            precio: item.price,
+          })),
+          promocionesEsperadas: cartPromotionIds(comboResumen),
+        });
+        syncComboResumen(validation.resumen);
+        const validationIssues = validation.items
+          .filter((item) => !item.disponible || !item.cantidadValida || item.precioCambiado)
+          .map(toStockIssue);
+        const promotionIssues = toPromotionIssues(validation.promocionesNoDisponibles ?? []);
+        if (validationIssues.length > 0 || promotionIssues.length > 0 || !validation.valido) {
+          syncCartWithStockIssues(validationIssues);
+          setCartAdjustmentNotice(
+            validationIssues.length > 0 || promotionIssues.length > 0
+              ? [...validationIssues, ...promotionIssues]
+              : [{
+                  itemName: "Carrito actualizado",
+                  idProductoVariante: -1,
+                  available: 0,
+                  requested: 0,
+                  message: "Revisa tu carrito antes de continuar.",
+                  promotionUnavailable: true,
+                }],
+          );
+          setStockIssues([]);
+          setCheckoutStatus({ phase: "idle", cartValidated: false });
+          return false;
+        }
         const pedido = await createEcommercePedido(payload);
         setCreatedPedido(pedido);
         if (pedido.comprobanteToken) {
@@ -298,6 +369,18 @@ export function useCheckoutPedido({
           setStockIssues([]);
           setOrderError("");
           setCheckoutStatus({ phase: "idle", cartValidated: false });
+        } else if (message.toLowerCase().includes("producto") && message.toLowerCase().includes("ecommerce")) {
+          setCartAdjustmentNotice([{
+            itemName: "Producto no disponible",
+            idProductoVariante: -2,
+            available: 0,
+            requested: 0,
+            message,
+            promotionUnavailable: true,
+          }]);
+          setStockIssues([]);
+          setOrderError("");
+          setCheckoutStatus({ phase: "idle", cartValidated: false });
         } else {
           setOrderError(message);
           setCheckoutStatus({ phase: "error" });
@@ -310,7 +393,9 @@ export function useCheckoutPedido({
     }
   }, [
     cartValidated,
+    cartItems,
     clearCart,
+    comboResumen,
     isCreatingOrder,
     isValidatingCart,
     onPedidoReserved,
@@ -318,6 +403,7 @@ export function useCheckoutPedido({
     router,
     stockIssues.length,
     syncCartWithStockIssues,
+    syncComboResumen,
   ]);
 
   const retryCartValidation = useCallback(() => {
@@ -389,7 +475,10 @@ export function useCheckoutPedido({
 
   return {
     cartItems,
+    subtotal,
     total,
+    descuentoPromocion,
+    comboResumen,
     hasMounted,
     checkoutPhase: checkoutStatus.phase,
     createdPedido,
