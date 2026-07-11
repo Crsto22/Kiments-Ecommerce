@@ -41,6 +41,12 @@ interface CartNotice {
   detail: string;
 }
 
+function formatPreventaDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
 type AddButtonState = "idle" | "loading" | "success";
 
 export default function ProductoDetallePage() {
@@ -539,7 +545,7 @@ export default function ProductoDetallePage() {
     setViewerImageUrl(imageUrl);
     setViewerSubtitle(subtitle);
     setViewerMode(mode);
-    setZoomStyle(getZoomStyle(sourceElement));
+    setZoomStyle(mode === "size-guide" ? {} : getZoomStyle(sourceElement));
     setIsDetailZoomed(false);
     setIsDraggingZoomedImage(false);
     setZoomPan({ x: 0, y: 0 });
@@ -960,6 +966,12 @@ export default function ProductoDetallePage() {
             {data.producto.nombre}
           </h1>
 
+          {data.producto.preventa && (
+            <div className="animate-product-enter mt-4 border border-black/10 bg-white px-4 py-3 text-[13px] font-light text-black" style={{ animationDelay: "120ms" }}>
+              Producto en preventa. Envios desde {formatPreventaDate(data.producto.fechaEnvioPreventa)}.
+            </div>
+          )}
+
           {currentVariant && (
             <p className="animate-product-enter mt-5 text-[11px] font-light uppercase" style={{ animationDelay: "140ms" }}>SKU: {currentVariant.sku}</p>
           )}
@@ -1234,11 +1246,15 @@ export default function ProductoDetallePage() {
           </div>
 
           <div
-            className="product-viewer-stage flex min-h-0 flex-1 items-center justify-center px-4 py-10 sm:px-12"
+            className={`product-viewer-stage flex min-h-0 flex-1 items-center justify-center ${
+              viewerMode === "size-guide" ? "px-3 pb-6 pt-24 sm:px-12 sm:py-10" : "px-4 py-10 sm:px-12"
+            }`}
             onClick={handleViewerStageClick}
           >
             <div
               className={`product-viewer-image relative overflow-hidden ${
+                viewerMode === "size-guide" ? "product-viewer-image-size-guide" : ""
+              } ${
                 isDetailZoomed
                   ? isDraggingZoomedImage
                     ? "cursor-grabbing"

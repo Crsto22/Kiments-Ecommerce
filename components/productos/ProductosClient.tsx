@@ -49,6 +49,7 @@ interface ProductCard {
   sizes: { label: string; disponible: boolean; stock: number }[];
   estadoStock: string;
   comboPrecio: number | null;
+  preventa: boolean;
 }
 
 function mapProductoToCard(item: ProductoItem): ProductCard {
@@ -94,6 +95,7 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
     sizes,
     estadoStock: item.estadoStock,
     comboPrecio: combo?.precioCombo ?? null,
+    preventa: item.producto.preventa === true,
   };
 }
 
@@ -552,6 +554,11 @@ function ProductResults({
                     2 por S/ {product.comboPrecio.toFixed(2)}
                   </span>
                 )}
+                {product.preventa && (
+                  <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    Preventa
+                  </span>
+                )}
               </div>
 
               {product.estadoStock === "PARCIAL" && (
@@ -584,7 +591,6 @@ function ProductResults({
 
                 {/* Price */}
                 <p className="mt-2 text-sm font-light">{product.priceLabel}</p>
-
                 {/* Size pills */}
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {product.sizes.map((size) => (

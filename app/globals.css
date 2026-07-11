@@ -88,6 +88,11 @@ body {
   transform-origin: center center;
 }
 
+.product-viewer-image-size-guide {
+  width: min(94vw, 760px);
+  height: min(74vh, 900px);
+}
+
 .product-viewer-closing .product-viewer-image {
   animation: product-image-zoom-out 300ms cubic-bezier(0.64, 0, 0.78, 0) both;
 }

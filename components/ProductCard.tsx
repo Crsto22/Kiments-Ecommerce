@@ -91,6 +91,11 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
             2 por S/ {combo.precioCombo.toFixed(2)}
           </span>
         )}
+        {item.producto.preventa && (
+          <span className="absolute right-0 top-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+            Preventa
+          </span>
+        )}
         <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <Link
             href={`/productos/${item.producto.slug}?color=${item.color.idColor}`}

@@ -57,6 +57,8 @@ export interface ProductoInfo {
   imagenGlobalThumbUrl: string | null;
   guiaTallasUrl: string | null;
   guiaTallasThumbUrl: string | null;
+  preventa: boolean;
+  fechaEnvioPreventa: string | null;
 }
 
 export interface PromocionComboProducto {
