@@ -48,7 +48,7 @@ export function ComboOfferCard({ combo }: Readonly<{ combo: EcommerceInicioCombo
   const hasDiscount = combo.precioRegularMinimo > combo.precioCombo;
   const comboItemsText = combo.items
     .map((item) => `${item.cantidadRequerida} ${item.nombre}`)
-    .join(" · ");
+    .join(" + ");
 
   return (
     <article>
