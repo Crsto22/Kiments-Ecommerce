@@ -544,28 +544,29 @@ function ProductResults({
                     <Eye size={18} weight="regular" />
                   </Link>
                 </div>
-                {product.estadoStock === "AGOTADO" && (
-                  <span className="absolute left-0 top-4 z-20 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                    Agotado
-                  </span>
-                )}
-                {product.comboPrecio !== null && (
-                  <span className="absolute left-0 top-0 z-20 bg-emerald-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                    2 por S/ {product.comboPrecio.toFixed(2)}
-                  </span>
-                )}
+                <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
+                  {product.comboPrecio !== null && (
+                    <span className="bg-emerald-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                      2 por S/ {product.comboPrecio.toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {product.preventa && (
                   <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
                     Preventa
                   </span>
                 )}
+                {product.estadoStock === "AGOTADO" && (
+                  <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    Agotado
+                  </span>
+                )}
+                {product.estadoStock === "PARCIAL" && (
+                  <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    Pocas unidades
+                  </span>
+                )}
               </div>
-
-              {product.estadoStock === "PARCIAL" && (
-                <span className="mt-2 inline-flex bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                  Pocas unidades
-                </span>
-              )}
 
               <div className="mt-4">
                 <Link href={`/productos/${product.slug}`}>

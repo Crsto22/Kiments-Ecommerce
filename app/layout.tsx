@@ -7,6 +7,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { Navbar } from "@/components/Navbar";
 import { CartProvider } from "@/components/CartProvider";
 import { PwaRegister } from "@/components/PwaRegister";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -102,6 +103,7 @@ export default function RootLayout({
         </Script>
         <CartProvider>
           <PwaRegister />
+          <ScrollToTop />
           <PageLoader />
           <Navbar />
           {children}

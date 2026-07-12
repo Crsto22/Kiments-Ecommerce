@@ -76,24 +76,26 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
           className="absolute inset-0 z-10"
           aria-label={`Ver ${item.producto.nombre}`}
         />
+        <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
+          {combo && (
+            <span className="bg-emerald-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+              2 por S/ {combo.precioCombo.toFixed(2)}
+            </span>
+          )}
+        </div>
+        {item.producto.preventa && (
+          <span className="absolute right-0 top-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+            Preventa
+          </span>
+        )}
         {item.estadoStock === "AGOTADO" && (
-          <span className="absolute bottom-0 left-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+          <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
             Agotado
           </span>
         )}
         {item.estadoStock === "PARCIAL" && (
           <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
             Pocas unidades
-          </span>
-        )}
-        {combo && (
-          <span className="absolute left-0 top-0 z-20 bg-emerald-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
-            2 por S/ {combo.precioCombo.toFixed(2)}
-          </span>
-        )}
-        {item.producto.preventa && (
-          <span className="absolute right-0 top-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
-            Preventa
           </span>
         )}
         <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

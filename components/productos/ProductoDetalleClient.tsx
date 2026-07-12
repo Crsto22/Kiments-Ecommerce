@@ -834,22 +834,29 @@ export default function ProductoDetallePage() {
                 type="button"
                 aria-label="Ampliar imagen"
                 onClick={(event) => handleGalleryButtonClick(event, () => openViewer())}
-                className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
+                className="absolute bottom-5 right-5 flex size-10 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100"
               >
                 <MagnifyingGlassPlus size={20} weight="regular" />
               </button>
             )}
 
-            {currentColor.estadoStock === "AGOTADO" && (
-              <span className="absolute left-3 top-3 z-10 bg-black/60 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                Agotado
+            {data.producto.preventa && (
+              <span className="absolute right-3 top-3 z-10 bg-black px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                Preventa
               </span>
             )}
-            {currentColor.estadoStock === "PARCIAL" && (
-              <span className="absolute left-3 top-3 z-10 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
-                Pocas unidades
-              </span>
-            )}
+            <div className="absolute left-3 top-3 z-10 flex max-w-[62%] flex-col items-start gap-1">
+              {currentColor.estadoStock === "AGOTADO" && (
+                <span className="bg-red-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  Agotado
+                </span>
+              )}
+              {currentColor.estadoStock === "PARCIAL" && (
+                <span className="bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  Pocas unidades
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Vertical gallery (desktop) — hidden scrollbar + arrows */}
@@ -965,12 +972,6 @@ export default function ProductoDetallePage() {
           <h1 className="animate-product-enter mt-2 text-3xl font-semibold uppercase leading-tight" style={{ animationDelay: "80ms" }}>
             {data.producto.nombre}
           </h1>
-
-          {data.producto.preventa && (
-            <div className="animate-product-enter mt-4 border border-black/10 bg-white px-4 py-3 text-[13px] font-light text-black" style={{ animationDelay: "120ms" }}>
-              Producto en preventa. Envios desde {formatPreventaDate(data.producto.fechaEnvioPreventa)}.
-            </div>
-          )}
 
           {currentVariant && (
             <p className="animate-product-enter mt-5 text-[11px] font-light uppercase" style={{ animationDelay: "140ms" }}>SKU: {currentVariant.sku}</p>
@@ -1173,6 +1174,14 @@ export default function ProductoDetallePage() {
               <Truck size={20} weight="fill"  className="text-black" />
               <span>Envios a todo el Perú</span>
             </div>
+            {data.producto.preventa && (
+              <div className="flex items-start gap-3 text-[12px] font-medium leading-5 text-amber-700">
+                <Tag size={15} weight="fill" className="mt-0.5 shrink-0" />
+                <span>
+                  Producto en preventa. Envios desde {formatPreventaDate(data.producto.fechaEnvioPreventa)}.
+                </span>
+              </div>
+            )}
           </div>
 
           {descripcionProducto && (

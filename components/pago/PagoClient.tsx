@@ -391,7 +391,10 @@ export default function PagoPage() {
   const payableTotal = createdPedido?.total ?? total;
   const summarySubtotal = createdPedido ? createdPedido.subtotal ?? createdPedido.total : subtotal;
   const summaryDiscount = createdPedido ? createdPedido.descuentoPromocion ?? 0 : descuentoPromocion;
-  const recoveryUrl = hasMounted && pedidoToken ? `${window.location.origin}/pago/${encodeURIComponent(pedidoToken)}` : "";
+  const recoveryUrl =
+    hasMounted && pedidoToken && typeof window !== "undefined"
+      ? `${window.location.origin}/pago/${encodeURIComponent(pedidoToken)}`
+      : "";
   const recoveryQrUrl = recoveryUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(recoveryUrl)}`
     : "";
@@ -426,7 +429,7 @@ export default function PagoPage() {
         : "";
   const shippingSummaryLabel =
     shippingType === "delivery"
-      ? "El precio de envio se coordinara con la asesora de ventas"
+      ? "El precio de envio se coordinara con la asesora"
       : shippingLabel || "Calculado en el proximo paso";
 
   if (!hasMounted || !hasCheckedPedidoToken || (pedidoToken && !createdPedido && isCreatingOrder)) {

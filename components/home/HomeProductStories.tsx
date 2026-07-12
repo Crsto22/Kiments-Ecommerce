@@ -40,6 +40,11 @@ export function HomeProductStories({ imagenesProductos, visible }: HomeProductSt
                     />
                     <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-500 ease-out group-hover:bg-black/15" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+                    {item.preventa && (
+                      <div className="absolute inset-x-0 top-0 bg-black py-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-white sm:text-[12px]">
+                        PRODUCTO PREVENTA
+                      </div>
+                    )}
                     <figcaption className="absolute inset-x-0 bottom-0 translate-y-1 px-4 pb-4 text-center text-[12px] font-light uppercase tracking-[0.14em] text-white underline underline-offset-4 opacity-90 transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:text-[14px]">
                       MODELO {item.slug}
                     </figcaption>

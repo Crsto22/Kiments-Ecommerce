@@ -46,6 +46,9 @@ export function HomeComboOffers({ combos, visible }: HomeComboOffersProps) {
 export function ComboOfferCard({ combo }: Readonly<{ combo: EcommerceInicioCombo }>) {
   const images = expandItems(combo.items).slice(0, 2);
   const hasDiscount = combo.precioRegularMinimo > combo.precioCombo;
+  const comboItemsText = combo.items
+    .map((item) => `${item.cantidadRequerida} ${item.nombre}`)
+    .join(" · ");
 
   return (
     <article>
@@ -53,6 +56,11 @@ export function ComboOfferCard({ combo }: Readonly<{ combo: EcommerceInicioCombo
         {images.map((item, index) => (
           <ComboImage key={`${item.idProducto}-${index}`} item={item} index={index} />
         ))}
+        {images.length > 1 && (
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black text-2xl font-light leading-none text-white shadow-md">
+            +
+          </div>
+        )}
       </div>
 
       <div className="mt-5 text-center">
@@ -60,7 +68,7 @@ export function ComboOfferCard({ combo }: Readonly<{ combo: EcommerceInicioCombo
           {combo.nombre}
         </h3>
         <p className="mt-2 min-h-10 text-xs font-light leading-5 text-black/55">
-          {combo.regla}
+          {comboItemsText || combo.regla}
         </p>
         <div className="mt-4 flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
           <span className="text-lg font-semibold text-red-700">

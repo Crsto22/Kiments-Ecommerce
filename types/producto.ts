@@ -235,6 +235,7 @@ export interface EcommerceInicioImagenProducto {
   slug: string;
   imagenUrl: string | null;
   imagenThumbUrl: string | null;
+  preventa?: boolean;
 }
 
 export interface EcommercePortada {
