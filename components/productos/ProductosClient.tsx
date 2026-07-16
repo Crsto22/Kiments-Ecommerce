@@ -25,9 +25,9 @@ import {
   Warning,
   Storefront,
 } from "@phosphor-icons/react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { fetchProductos, buildImageUrl } from "@/lib/api";
-import type { ProductoItem } from "@/types/producto";
+import type { ProductoItem, ProductoListResponse } from "@/types/producto";
 
 type ViewMode = "compact" | "normal" | "wide";
 const SIZE_FILTERS = ["XS", "S", "M", "L"];
@@ -99,7 +99,7 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
   };
 }
 
-export default function ProductosPage() {
+export default function ProductosPage({ initialData }: { initialData: ProductoListResponse | null }) {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(PRICE_LIMIT);
   const [pendingSizes, setPendingSizes] = useState<string[]>([]);
@@ -107,15 +107,16 @@ export default function ProductosPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
 
   // API state
-  const [products, setProducts] = useState<ProductCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<ProductCard[]>(() => initialData?.content.map(mapProductoToCard) ?? []);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [tiendaConfigurada, setTiendaConfigurada] = useState(true);
+  const [tiendaConfigurada, setTiendaConfigurada] = useState(initialData?.tiendaConfigurada ?? true);
+  const skipInitialFetch = useRef(Boolean(initialData));
 
   // Pagination
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
+  const [totalElements, setTotalElements] = useState(initialData?.totalElements ?? 0);
   const pageSize = 10;
 
   const fetchData = useCallback(async (pageNum: number) => {
@@ -153,6 +154,10 @@ export default function ProductosPage() {
   }, [maxPrice, selectedSizes]);
 
   useEffect(() => {
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -327,10 +332,11 @@ function ProductosView({
 
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#252525] sm:px-10 lg:px-16 xl:px-24">
+      <h1 className="sr-only">Ropa para mujer KIMENTS</h1>
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[240px_1fr]">
         {/* Desktop sidebar filters */}
         <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-          <h1 className="text-3xl font-light">Filtrar por</h1>
+          <h2 className="text-3xl font-light">Filtrar por</h2>
           {!loading && filtersContent}
         </aside>
 

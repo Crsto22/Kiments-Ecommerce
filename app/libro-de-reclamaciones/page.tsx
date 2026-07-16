@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Libro de Reclamaciones | KIMENTS",
+  title: "Libro de Reclamaciones",
+  alternates: { canonical: "/libro-de-reclamaciones" },
   description: "Canal de atención para reclamos y quejas de KIMENTS.",
 };
 

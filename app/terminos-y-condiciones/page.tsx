@@ -3,7 +3,8 @@ import { TermsCta } from "@/components/terminos-y-condiciones/TermsCta";
 import { TermsHero } from "@/components/terminos-y-condiciones/TermsHero";
 
 export const metadata = {
-  title: "Términos y Condiciones | KIMENTS",
+  title: "Términos y Condiciones",
+  alternates: { canonical: "/terminos-y-condiciones" },
   description: "Términos y condiciones de uso de la tienda virtual KIMENTS.",
 };
 

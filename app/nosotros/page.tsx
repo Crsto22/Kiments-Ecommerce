@@ -5,8 +5,9 @@ import { NosotrosStore } from "../../components/nosotros/NosotrosStore";
 import { NosotrosValues } from "../../components/nosotros/NosotrosValues";
 
 export const metadata = {
-  title: "Nosotros | KIMENTS",
+  title: "Nosotros",
   description: "Conoce la esencia y el proposito detras de KIMENTS.",
+  alternates: { canonical: "/nosotros" },
 };
 
 export default function NosotrosPage() {

@@ -3,7 +3,8 @@ import { FaqHero } from "@/components/preguntas-frecuentes/FaqHero";
 import { FaqSections, type FaqSection } from "@/components/preguntas-frecuentes/FaqSections";
 
 export const metadata = {
-  title: "Preguntas Frecuentes | KIMENTS",
+  title: "Preguntas Frecuentes",
+  alternates: { canonical: "/preguntas-frecuentes" },
   description: "Resuelve tus dudas sobre envíos, pagos y devoluciones en KIMENTS.",
 };
 

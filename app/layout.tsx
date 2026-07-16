@@ -25,22 +25,41 @@ const kiments = localFont({
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.com.pe";
 const googleAnalyticsId = "G-07111WXD3V";
 
+const storeJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ClothingStore",
+  name: "KIMENTS",
+  url: siteUrl,
+  logo: `${siteUrl}/img/pwa/logo_pwa.png`,
+  image: `${siteUrl}/img/pwa/logo_pwa.png`,
+  telephone: "+51 933 918 047",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Jr. Huanuco 1705-1707",
+    addressLocality: "La Victoria",
+    addressRegion: "Lima",
+    postalCode: "15018",
+    addressCountry: "PE",
+  },
+  sameAs: [
+    "https://www.instagram.com/kiments.pe/",
+    "https://www.tiktok.com/@kiments",
+    "https://www.facebook.com/kimentsropa",
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "KIMENTS",
   title: {
-    default: "KIMENTS | Tienda de ropa",
+    default: "KIMENTS | Ropa para mujer en Peru",
     template: "%s | KIMENTS",
   },
-  description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
+  description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
   manifest: "/manifest.webmanifest",
-  alternates: {
-    canonical: siteUrl,
-  },
   openGraph: {
-    title: "KIMENTS | Tienda de ropa",
-    description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
-    url: siteUrl,
+    title: "KIMENTS | Ropa para mujer en Peru",
+    description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
     siteName: "KIMENTS",
     locale: "es_PE",
     type: "website",
@@ -55,8 +74,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KIMENTS | Tienda de ropa",
-    description: "Compra ropa KIMENTS online: modelos, colores y tallas disponibles para pedidos en Peru.",
+    title: "KIMENTS | Ropa para mujer en Peru",
+    description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
     images: [`${siteUrl}/img/pwa/logo_pwa.png`],
   },
   robots: {
@@ -89,6 +108,12 @@ export default function RootLayout({
       className={`${poppins.variable} ${kiments.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#111318] text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(storeJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
           strategy="afterInteractive"

@@ -44,9 +44,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes: MetadataRoute.Sitemap = [
     { url: siteUrl, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${siteUrl}/productos`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/promociones`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${siteUrl}/nosotros`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/preguntas-frecuentes`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/terminos-y-condiciones`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteUrl}/libro-de-reclamaciones`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   return [...routes, ...(await fetchProductUrls())];

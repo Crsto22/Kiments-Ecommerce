@@ -49,17 +49,18 @@ function formatPreventaDate(value: string | null | undefined): string {
 
 type AddButtonState = "idle" | "loading" | "success";
 
-export default function ProductoDetallePage() {
+export default function ProductoDetallePage({ initialData }: { initialData: ProductoDetalleResponse }) {
   const params = useParams();
   const slug = params.slug as string;
   const searchParams = useSearchParams();
   const colorParam = searchParams.get("color");
   const { addItem } = useCart();
 
-  const [data, setData] = useState<ProductoDetalleResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ProductoDetalleResponse | null>(initialData);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const skipInitialFetch = useRef(true);
 
   // Zoom viewer
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -92,7 +93,13 @@ export default function ProductoDetallePage() {
     desktopGalleryRef.current?.scrollBy({ top: 210, behavior: "smooth" });
   };
   // Selections
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(() => {
+    const colorId = colorParam ? Number(colorParam) : null;
+    const index = colorId
+      ? initialData.colores.findIndex((color) => color.color.idColor === colorId)
+      : -1;
+    return index >= 0 ? index : 0;
+  });
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [addedVariantId, setAddedVariantId] = useState<number | null>(null);
@@ -112,6 +119,10 @@ export default function ProductoDetallePage() {
 
   useEffect(() => {
     if (!slug) return;
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -151,20 +162,7 @@ export default function ProductoDetallePage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, colorParam]);
-
-  // Canonical URL for SEO (strip color query param)
-  useEffect(() => {
-    if (!slug || typeof window === "undefined") return;
-    const canonicalUrl = `${window.location.origin}/productos/${slug}`;
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "canonical";
-      document.head.appendChild(link);
-    }
-    link.href = canonicalUrl;
-  }, [slug]);
+  }, [slug, colorParam, initialData]);
 
   const currentColor: ColorDetalle | null =
     data && data.colores.length > 0 ? data.colores[selectedColorIndex] ?? data.colores[0] : null;
