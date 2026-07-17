@@ -17,7 +17,6 @@ import {
   CaretLeft,
   CaretRight,
   Columns,
-  Eye,
   GridFour,
   Rows,
   SlidersHorizontal,
@@ -528,7 +527,7 @@ function ProductResults({
               style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
             >
               <div
-                className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden bg-white"
+                className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden rounded-md bg-white"
                 style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
               >
                 {product.hasImage ? (
@@ -541,34 +540,25 @@ function ProductResults({
                   className="absolute inset-0 z-10"
                   aria-label={`Ver ${product.name}`}
                 />
-                <div className="absolute inset-x-0 bottom-6 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  <Link
-                    href={`/productos/${product.slug}?color=${product.idColor}`}
-                    aria-label="Ver producto"
-                    className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-                  >
-                    <Eye size={18} weight="regular" />
-                  </Link>
-                </div>
                 <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
                   {product.comboPrecio !== null && (
-                    <span className="bg-emerald-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                    <span className="bg-emerald-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                       2 por S/ {product.comboPrecio.toFixed(2)}
                     </span>
                   )}
                 </div>
                 {product.preventa && (
-                  <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                     Preventa
                   </span>
                 )}
                 {product.estadoStock === "AGOTADO" && (
-                  <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                     Agotado
                   </span>
                 )}
                 {product.estadoStock === "PARCIAL" && (
-                  <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                  <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                     Pocas unidades
                   </span>
                 )}
@@ -603,7 +593,7 @@ function ProductResults({
                   {product.sizes.map((size) => (
                     <span
                       key={size.label}
-                      className={`inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[10px] font-light uppercase ${
+                      className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-light uppercase sm:size-8 sm:text-[10px] ${
                         size.disponible
                           ? "border-black/20 text-black/70"
                           : "border-black/5 text-black/25 line-through"

@@ -104,20 +104,31 @@ function Carousel({
     };
   }, [api, onSelect]);
 
+  const contextValue = React.useMemo<CarouselContextProps>(
+    () => ({
+      carouselRef,
+      api,
+      opts,
+      orientation,
+      scrollPrev,
+      scrollNext,
+      canScrollPrev,
+      canScrollNext,
+    }),
+    [
+      carouselRef,
+      api,
+      opts,
+      orientation,
+      scrollPrev,
+      scrollNext,
+      canScrollPrev,
+      canScrollNext,
+    ],
+  );
+
   return (
-    <CarouselContext.Provider
-      value={{
-        carouselRef,
-        api,
-        opts,
-        orientation:
-          orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
-        scrollPrev,
-        scrollNext,
-        canScrollPrev,
-        canScrollNext,
-      }}
-    >
+    <CarouselContext.Provider value={contextValue}>
       <div
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
@@ -173,6 +184,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
 
 function CarouselPrevious({
   className,
+  children,
   ...props
 }: React.ComponentProps<"button">) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
@@ -192,13 +204,17 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft className="size-4" />
+      {children ?? <ArrowLeft className="size-4" />}
       <span className="sr-only">Previous slide</span>
     </button>
   );
 }
 
-function CarouselNext({ className, ...props }: React.ComponentProps<"button">) {
+function CarouselNext({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"button">) {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
@@ -216,7 +232,7 @@ function CarouselNext({ className, ...props }: React.ComponentProps<"button">) {
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight className="size-4" />
+      {children ?? <ArrowRight className="size-4" />}
       <span className="sr-only">Next slide</span>
     </button>
   );

@@ -54,9 +54,6 @@ export default function PromocionesClient() {
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#252525] sm:px-10 lg:px-16 xl:px-24">
       <section className="mx-auto max-w-7xl">
         <div className="mb-12 flex flex-col gap-3 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/45">
-            Ecommerce
-          </p>
           <h1 className="text-3xl font-semibold uppercase tracking-[0.08em] sm:text-4xl">
             Promociones
           </h1>

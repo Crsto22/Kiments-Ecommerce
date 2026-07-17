@@ -90,24 +90,24 @@ export function Hero({ portadas = EMPTY_PORTADAS }: { portadas?: EcommercePortad
         type="button"
         aria-label="Portada anterior"
         onClick={goToPrev}
-        className="group absolute left-3 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/15 hover:text-white md:left-6 md:size-12"
+        className="group absolute left-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center bg-transparent text-black transition-all duration-300 hover:text-black md:left-6 md:size-12"
       >
         <CaretLeft
           size={28}
-          weight="thin"
-          className="transition-transform duration-300 group-hover:-translate-x-0.5"
+          weight="bold"
+          className="size-5 transition-transform duration-300 group-hover:-translate-x-0.5 md:size-7"
         />
       </button>
       <button
         type="button"
         aria-label="Portada siguiente"
         onClick={goToNext}
-        className="group absolute right-3 top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-all duration-300 hover:bg-white/15 hover:text-white md:right-6 md:size-12"
+        className="group absolute right-3 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center bg-transparent text-black transition-all duration-300 hover:text-black md:right-6 md:size-12"
       >
         <CaretRight
           size={28}
-          weight="thin"
-          className="transition-transform duration-300 group-hover:translate-x-0.5"
+          weight="bold"
+          className="size-5 transition-transform duration-300 group-hover:translate-x-0.5 md:size-7"
         />
       </button>
     </section>

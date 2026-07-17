@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Eye } from "@phosphor-icons/react";
 import { buildImageUrl } from "@/lib/api";
 import type { ProductoItem } from "@/types/producto";
 
@@ -54,7 +53,7 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
 
   return (
     <article className="min-w-0">
-      <div className="group relative aspect-[3/4] w-full overflow-hidden bg-[#eee9e2]">
+      <div className="group relative aspect-[3/4] w-full overflow-hidden rounded-md bg-[#eee9e2]">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -78,35 +77,26 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
         />
         <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
           {combo && (
-            <span className="bg-emerald-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+            <span className="bg-emerald-700 px-2 py-1 text-[8px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 lg:text-[11px]">
               2 por S/ {combo.precioCombo.toFixed(2)}
             </span>
           )}
         </div>
         {item.producto.preventa && (
-          <span className="absolute right-0 top-0 z-20 bg-black px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+          <span className="absolute right-0 top-0 z-20 bg-black px-2 py-1 text-[8px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 lg:text-[11px]">
             Preventa
           </span>
         )}
         {item.estadoStock === "AGOTADO" && (
-          <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+          <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-2 py-1 text-[8px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 lg:text-[11px]">
             Agotado
           </span>
         )}
         {item.estadoStock === "PARCIAL" && (
-          <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-2 py-1 text-[9px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 sm:text-[11px]">
+          <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-2 py-1 text-[8px] font-light uppercase tracking-[0.08em] text-white sm:px-4 sm:py-2 lg:text-[11px]">
             Pocas unidades
           </span>
         )}
-        <div className="absolute inset-x-0 bottom-5 z-20 flex translate-y-3 items-center justify-center opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <Link
-            href={`/productos/${item.producto.slug}?color=${item.color.idColor}`}
-            aria-label="Ver producto"
-            className="flex size-8 items-center justify-center bg-white text-black shadow-sm transition-colors hover:bg-black hover:text-white"
-          >
-            <Eye size={18} weight="regular" />
-          </Link>
-        </div>
       </div>
 
       <div className={`mt-4 ${centered ? "flex flex-col items-center text-center" : ""}`}>
@@ -140,7 +130,7 @@ export function ProductCard({ item, centered = false }: Readonly<ProductCardProp
           {sizes.map((size) => (
             <span
               key={size.label}
-              className={`inline-flex items-center justify-center rounded-sm border px-2.5 py-1 text-[11px] font-light uppercase tracking-wide transition-colors ${
+              className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-light uppercase transition-colors sm:size-8 sm:text-[10px] ${
                 size.disponible
                   ? "border-black/25 text-black/75 hover:border-black hover:text-black"
                   : "border-black/5 text-black/25 line-through"

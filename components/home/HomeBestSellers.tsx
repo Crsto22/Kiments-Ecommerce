@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
+import { MobileBestSellersCarousel } from "@/components/home/MobileBestSellersCarousel";
 import type { ProductoItem } from "@/types/producto";
 
 interface HomeBestSellersProps {
@@ -30,7 +31,9 @@ export function HomeBestSellers({ items, visible }: HomeBestSellersProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+        <MobileBestSellersCarousel items={items} />
+
+        <div className="hidden gap-x-3 gap-y-8 sm:grid sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
             <div key={`${item.producto.idProducto}-${item.color.idColor}`}>
               <ProductCard item={item} centered />

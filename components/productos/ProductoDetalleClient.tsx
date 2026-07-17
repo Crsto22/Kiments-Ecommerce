@@ -778,7 +778,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
         <section className="grid gap-3 sm:grid-cols-[1fr_96px]">
           <div
             ref={imageFrameRef}
-            className={`animate-product-image-enter group relative aspect-[3/4] max-h-[420px] overflow-hidden bg-white sm:max-h-none ${
+            className={`animate-product-image-enter group relative aspect-[3/4] max-h-[420px] overflow-hidden rounded-md bg-white sm:max-h-none ${
               activeImageUrl ? "cursor-zoom-in" : ""
             }`}
             onClick={activeImageUrl ? () => openViewer() : undefined}
@@ -839,18 +839,18 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
             )}
 
             {data.producto.preventa && (
-              <span className="absolute right-3 top-3 z-10 bg-black px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+              <span className="absolute right-3 top-3 z-10 bg-black px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                 Preventa
               </span>
             )}
             <div className="absolute left-3 top-3 z-10 flex max-w-[62%] flex-col items-start gap-1">
               {currentColor.estadoStock === "AGOTADO" && (
-                <span className="bg-red-700 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                <span className="bg-red-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                   Agotado
                 </span>
               )}
               {currentColor.estadoStock === "PARCIAL" && (
-                <span className="bg-black/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white">
+                <span className="bg-black/50 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
                   Pocas unidades
                 </span>
               )}
@@ -893,7 +893,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
                       }
                       setActiveImageIndex(item.imageIndex);
                     }}
-                    className={`relative aspect-[3/4] shrink-0 overflow-hidden bg-white transition-all ${
+                    className={`relative aspect-[3/4] shrink-0 overflow-hidden rounded-md bg-white transition-all ${
                       isActive ? "ring-1 ring-black" : "opacity-60 hover:opacity-100"
                     }`}
                   >
@@ -948,7 +948,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
                     }
                     setActiveImageIndex(item.imageIndex);
                   }}
-                  className={`relative aspect-[3/4] h-32 shrink-0 overflow-hidden bg-white transition-all ${
+                  className={`relative aspect-[3/4] h-32 shrink-0 overflow-hidden rounded-md bg-white transition-all ${
                     isActive ? "ring-1 ring-black" : "opacity-50"
                   }`}
                 >

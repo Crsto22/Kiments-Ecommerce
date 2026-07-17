@@ -6,8 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Basket as BasketIcon,
+  House,
   List,
   MagnifyingGlass,
+  Tag,
+  TShirt,
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import {
@@ -29,6 +32,10 @@ const navItems = [
   { label: "INICIO", href: "/" },
   { label: "PRODUCTOS", href: "/productos" },
   { label: "PROMOCIONES", href: "/promociones" },
+];
+const mobileNavItems = [
+  { label: "Inicio", href: "/", Icon: House },
+  { label: "Productos", href: "/productos", Icon: TShirt },
 ];
 const SEARCH_DEBOUNCE_MS = 1500;
 
@@ -270,7 +277,7 @@ export function Navbar() {
             aria-label="Abrir busqueda"
             aria-expanded={isSearchOpen}
             onClick={openSearch}
-            className={`flex size-9 items-center justify-center rounded-sm transition-colors ${iconText}`}
+            className={`hidden size-9 items-center justify-center rounded-sm transition-colors lg:flex ${iconText}`}
           >
             <MagnifyingGlass size={24} weight="thin" />
           </button>
@@ -292,7 +299,69 @@ export function Navbar() {
           </div>
         </div>
       </nav>
+
+      <MobileBottomNav
+        pathname={pathname}
+      />
     </header>
+  );
+}
+
+function MobileBottomNav({
+  pathname,
+}: Readonly<{
+  pathname: string;
+}>) {
+  const isSearchActive = pathname.startsWith("/buscar");
+  const isPromotionsActive = pathname.startsWith("/promociones");
+
+  return (
+    <nav
+      aria-label="Navegacion movil"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] backdrop-blur-md sm:hidden"
+    >
+      <div className="grid min-h-16 grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+        {mobileNavItems.map(({ label, href, Icon }) => {
+          const isActive = href === "/" ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className={`relative flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium uppercase transition-colors ${
+                isActive ? "text-black" : "text-black/50"
+              }`}
+            >
+              {isActive && <span className="absolute inset-x-4 top-0 h-0.5 bg-black" />}
+              <Icon size={22} weight={isActive ? "fill" : "regular"} />
+              <span className="truncate">{label}</span>
+            </Link>
+          );
+        })}
+        <Link
+          href="/buscar"
+          aria-current={isSearchActive ? "page" : undefined}
+          className={`relative flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium uppercase transition-colors ${
+            isSearchActive ? "text-black" : "text-black/50"
+          }`}
+        >
+          {isSearchActive && <span className="absolute inset-x-4 top-0 h-0.5 bg-black" />}
+          <MagnifyingGlass size={22} weight={isSearchActive ? "bold" : "regular"} />
+          <span>Buscar</span>
+        </Link>
+        <Link
+          href="/promociones"
+          aria-current={isPromotionsActive ? "page" : undefined}
+          className={`relative flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium uppercase transition-colors ${
+            isPromotionsActive ? "text-black" : "text-black/50"
+          }`}
+        >
+          {isPromotionsActive && <span className="absolute inset-x-4 top-0 h-0.5 bg-black" />}
+          <Tag size={22} weight={isPromotionsActive ? "fill" : "regular"} />
+          <span>Promociones</span>
+        </Link>
+      </div>
+    </nav>
   );
 }
 
