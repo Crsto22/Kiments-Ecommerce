@@ -15,6 +15,8 @@ const frequentLinks = [
   { label: "Sobre Nosotros", href: "/nosotros" },
   { label: "Preguntas Frecuentes", href: "/preguntas-frecuentes" },
   { label: "Terminos y Condiciones", href: "/terminos-y-condiciones" },
+  { label: "Politica de Privacidad", href: "/politica-de-privacidad" },
+  { label: "Politica de Cookies", href: "/politica-de-cookies" },
   { label: "Libro de Reclamaciones (Peru)", href: "/libro-de-reclamaciones" },
 ];
 

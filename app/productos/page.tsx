@@ -5,12 +5,12 @@ import type { ProductoListResponse } from "@/types/producto";
 const backendUrl = (process.env.SPRING_BOOT_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 export const metadata: Metadata = {
-  title: "Ropa para mujer",
-  description: "Compra conjuntos, vestidos y prendas KIMENTS en colores y tallas disponibles. Envios a todo el Peru.",
+  title: "Conjuntos sastre para mujer",
+  description: "Compra conjuntos sastre para mujer KIMENTS en colores y tallas disponibles. Envios a todo el Peru.",
   alternates: { canonical: "/productos" },
   openGraph: {
-    title: "Ropa para mujer | KIMENTS",
-    description: "Descubre la coleccion oficial KIMENTS y compra online en Peru.",
+    title: "Conjuntos sastre para mujer | KIMENTS",
+    description: "Descubre conjuntos sastre para mujer KIMENTS y compra online en Peru.",
     url: "/productos",
   },
 };

@@ -63,7 +63,7 @@ export function InstagramCarousel() {
           {instagramPosts.map((post, index) => (
             <CarouselItem
               key={post.image}
-              className="basis-[75%] pl-0 sm:basis-[45%] lg:basis-1/4"
+              className="basis-1/2 pl-0 sm:basis-[45%] lg:basis-1/4"
             >
               <Link
                 href={post.href}
@@ -76,7 +76,7 @@ export function InstagramCarousel() {
                   src={post.image}
                   alt={`Publicacion de Instagram ${index + 1}`}
                   fill
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 75vw"
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 50vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/35 group-hover:opacity-100">

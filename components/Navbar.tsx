@@ -10,7 +10,6 @@ import {
   List,
   MagnifyingGlass,
   Tag,
-  TShirt,
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import {
@@ -35,7 +34,6 @@ const navItems = [
 ];
 const mobileNavItems = [
   { label: "Inicio", href: "/", Icon: House },
-  { label: "Productos", href: "/productos", Icon: TShirt },
 ];
 const SEARCH_DEBOUNCE_MS = 1500;
 
@@ -312,6 +310,7 @@ function MobileBottomNav({
 }: Readonly<{
   pathname: string;
 }>) {
+  const isProductsActive = pathname.startsWith("/productos");
   const isSearchActive = pathname.startsWith("/buscar");
   const isPromotionsActive = pathname.startsWith("/promociones");
 
@@ -338,6 +337,23 @@ function MobileBottomNav({
             </Link>
           );
         })}
+        <Link
+          href="/productos"
+          aria-current={isProductsActive ? "page" : undefined}
+          className={`relative flex min-w-0 flex-col items-center justify-center gap-1 text-[9px] font-medium uppercase transition-colors ${
+            isProductsActive ? "text-black" : "text-black/50"
+          }`}
+        >
+          {isProductsActive && <span className="absolute inset-x-4 top-0 h-0.5 bg-black" />}
+          <Image
+            src={isProductsActive ? "/iconos/terno_sastre_mujer_fill.svg" : "/iconos/terno_sastre_mujer_thin1.svg"}
+            alt=""
+            width={22}
+            height={22}
+            className={`size-[22px] ${isProductsActive ? "" : "opacity-50"}`}
+          />
+          <span className="truncate">Productos</span>
+        </Link>
         <Link
           href="/buscar"
           aria-current={isSearchActive ? "page" : undefined}

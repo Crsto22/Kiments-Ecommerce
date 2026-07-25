@@ -101,6 +101,15 @@ body {
   animation: cart-alert-in 260ms ease-out both;
 }
 
+.cookie-notice-enter {
+  animation: cookie-notice-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cookie-notice-exit {
+  pointer-events: none;
+  animation: cookie-notice-out 220ms ease-in both;
+}
+
 .color-tooltip {
   position: relative;
   display: inline-flex;
@@ -145,6 +154,30 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes cookie-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cookie-notice-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
   }
 }
 

@@ -1,21 +1,22 @@
 "use client";
 
 import { CaretLeft, CaretRight, Tag } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ComboOfferCard } from "@/components/home/HomeComboOffers";
 import { fetchPromociones } from "@/lib/api";
-import type { EcommerceInicioCombo } from "@/types/producto";
+import type { EcommerceInicioCombo, EcommercePromocionesResponse } from "@/types/producto";
 
 const PAGE_SIZE = 9;
 const SKELETON_KEYS = Array.from({ length: PAGE_SIZE }, (_, index) => `promo-skeleton-${index}`);
 
-export default function PromocionesClient() {
-  const [promociones, setPromociones] = useState<EcommerceInicioCombo[]>([]);
+export default function PromocionesClient({ initialData }: Readonly<{ initialData: EcommercePromocionesResponse | null }>) {
+  const [promociones, setPromociones] = useState<EcommerceInicioCombo[]>(() => initialData?.content ?? []);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 0);
+  const [totalElements, setTotalElements] = useState(initialData?.totalElements ?? 0);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+  const skipInitialFetch = useRef(Boolean(initialData));
 
   const fetchData = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -33,6 +34,10 @@ export default function PromocionesClient() {
   }, []);
 
   useEffect(() => {
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -65,13 +70,9 @@ export default function PromocionesClient() {
         </div>
 
         {loading && (
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-2">
             {SKELETON_KEYS.map((key) => (
-              <div key={key} className="animate-pulse">
-                <div className="mx-auto h-64 max-w-sm bg-white/70" />
-                <div className="mx-auto mt-5 h-4 w-2/3 bg-black/10" />
-                <div className="mx-auto mt-3 h-3 w-1/2 bg-black/5" />
-              </div>
+              <PromotionSkeletonCard key={key} />
             ))}
           </div>
         )}
@@ -101,9 +102,15 @@ export default function PromocionesClient() {
 
         {!loading && !error && promociones.length > 0 && (
           <>
-            <div className="grid gap-10 md:grid-cols-3">
-              {promociones.map((promo) => (
-                <ComboOfferCard key={promo.idPromocionCombo} combo={promo} />
+            <div className="grid gap-5 lg:grid-cols-2">
+              {promociones.map((promo, index) => (
+                <div
+                  key={promo.idPromocionCombo}
+                  className="animate-product-enter"
+                  style={{ animationDelay: `${Math.min(index, 5) * 70}ms` }}
+                >
+                  <ComboOfferCard combo={promo} />
+                </div>
               ))}
             </div>
 
@@ -138,5 +145,31 @@ export default function PromocionesClient() {
         )}
       </section>
     </main>
+  );
+}
+
+function PromotionSkeletonCard() {
+  return (
+    <div className="grid grid-cols-[1.1fr_0.9fr] overflow-hidden border border-black/10 bg-[#fbfaf7] sm:min-h-72 sm:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid min-h-44 grid-cols-2 bg-[#eee9e2] sm:min-h-72">
+        <div className="animate-pulse bg-white" />
+        <div className="animate-pulse border-l border-[#eee9e2] bg-white/80" />
+      </div>
+      <div className="flex min-w-0 flex-col justify-between border-l border-black/10 p-3.5 sm:p-6">
+        <div className="animate-pulse space-y-2">
+          <div className="h-2 w-24 rounded bg-black/10" />
+          <div className="mt-4 h-4 w-4/5 rounded bg-black/10" />
+          <div className="h-4 w-2/3 rounded bg-black/5" />
+          <div className="mt-4 h-3 w-3/4 rounded bg-black/5" />
+        </div>
+        <div className="mt-3 border-t border-black/10 pt-3 sm:mt-6 sm:pt-4">
+          <div className="h-2 w-20 animate-pulse rounded bg-black/10" />
+          <div className="mt-3 flex items-baseline gap-2">
+            <div className="h-5 w-24 animate-pulse rounded bg-black/10" />
+            <div className="h-3 w-14 animate-pulse rounded bg-black/5" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

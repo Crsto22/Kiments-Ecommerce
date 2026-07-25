@@ -1,5 +1,5 @@
 const CACHE_NAME = "kiments-pwa-v2";
-const APP_SHELL = ["/", "/productos", "/img/pwa/logo_pwa.png", "/manifest.webmanifest"];
+const APP_SHELL = ["/", "/productos", "/promociones", "/img/pwa/logo_pwa.png", "/manifest.webmanifest"];
 const MEDIA_REQUEST = /\.(?:mp4|webm|mov|m4v|mp3|wav|ogg)$/i;
 
 function canCache(request, response) {

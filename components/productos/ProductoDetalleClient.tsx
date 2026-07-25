@@ -24,6 +24,7 @@ import {
   type MouseEvent,
   type PointerEvent,
   useCallback,
+  useEffectEvent,
   useEffect,
   useMemo,
   useRef,
@@ -32,7 +33,7 @@ import {
 import { MAX_CART_QUANTITY_PER_VARIANT, useCart } from "@/components/CartProvider";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { fetchProductoBySlug, fetchProductoColorStock, fetchProductoVarianteStock, buildImageUrl } from "@/lib/api";
-import type { ProductoDetalleResponse, ProductoColorStockResponse, ColorDetalle, VarianteProducto } from "@/types/producto";
+import type { ProductoDetalleResponse, ProductoColorStockResponse, ColorDetalle, VarianteProducto, PromocionComboProducto } from "@/types/producto";
 
 interface CartNotice {
   type: "success" | "error";
@@ -40,6 +41,37 @@ interface CartNotice {
   productName: string;
   detail: string;
 }
+
+interface ViewerState {
+  isMounted: boolean;
+  phase: "opening" | "closing";
+  imageUrl: string | null;
+  subtitle: string;
+  mode: "gallery" | "size-guide";
+  zoomStyle: CSSProperties;
+  isZoomed: boolean;
+  isDragging: boolean;
+  pan: { x: number; y: number };
+}
+
+interface ProductPageState {
+  data: ProductoDetalleResponse | null;
+  loading: boolean;
+  error: string | null;
+  notFound: boolean;
+}
+
+const initialViewerState: ViewerState = {
+  isMounted: false,
+  phase: "opening",
+  imageUrl: null,
+  subtitle: "",
+  mode: "gallery",
+  zoomStyle: {},
+  isZoomed: false,
+  isDragging: false,
+  pan: { x: 0, y: 0 },
+};
 
 function formatPreventaDate(value: string | null | undefined): string {
   if (!value) return "";
@@ -49,6 +81,20 @@ function formatPreventaDate(value: string | null | undefined): string {
 
 type AddButtonState = "idle" | "loading" | "success";
 
+function PromotionComboRow({ combo }: Readonly<{ combo: PromocionComboProducto }>) {
+  return (
+    <div className="flex items-start gap-2">
+      <Tag size={15} weight="regular" className="mt-1 shrink-0 text-emerald-700" />
+      <div className="min-w-0">
+        <p className="font-medium uppercase tracking-[0.04em] text-black">
+          Promocion {combo.regla}
+        </p>
+        <p className="text-emerald-700">Precio combo S/ {combo.precioCombo.toFixed(2)}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductoDetallePage({ initialData }: { initialData: ProductoDetalleResponse }) {
   const params = useParams();
   const slug = params.slug as string;
@@ -56,29 +102,48 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
   const colorParam = searchParams.get("color");
   const { addItem } = useCart();
 
-  const [data, setData] = useState<ProductoDetalleResponse | null>(initialData);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const [productPage, setProductPage] = useState<ProductPageState>({
+    data: initialData,
+    loading: false,
+    error: null,
+    notFound: false,
+  });
+  const { data, loading, error, notFound } = productPage;
   const skipInitialFetch = useRef(true);
 
   // Zoom viewer
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isViewerMounted, setIsViewerMounted] = useState(false);
-  const [viewerPhase, setViewerPhase] = useState<"opening" | "closing">("opening");
-  const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
-  const [viewerSubtitle, setViewerSubtitle] = useState("");
-  const [viewerMode, setViewerMode] = useState<"gallery" | "size-guide">("gallery");
-  const [zoomStyle, setZoomStyle] = useState<CSSProperties>({});
-  const [isDetailZoomed, setIsDetailZoomed] = useState(false);
-  const [isDraggingZoomedImage, setIsDraggingZoomedImage] = useState(false);
-  const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
+  const [viewer, setViewer] = useState<ViewerState>(initialViewerState);
+  const {
+    isMounted: isViewerMounted,
+    phase: viewerPhase,
+    imageUrl: viewerImageUrl,
+    subtitle: viewerSubtitle,
+    mode: viewerMode,
+    zoomStyle,
+    isZoomed: isDetailZoomed,
+    isDragging: isDraggingZoomedImage,
+    pan: zoomPan,
+  } = viewer;
   const imageFrameRef = useRef<HTMLDivElement | null>(null);
   const sizeGuideButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const addedTimerRef = useRef<number | null>(null);
   const dragStartRef = useRef({ pointerX: 0, pointerY: 0, panX: 0, panY: 0 });
   const dragMovedRef = useRef(false);
+
+  const updateViewer = useCallback((patch: Partial<ViewerState>) => {
+    setViewer((current) => ({ ...current, ...patch }));
+  }, []);
+
+  const resetViewerZoom = useCallback(() => {
+    setViewer((current) => ({
+      ...current,
+      isZoomed: false,
+      isDragging: false,
+      pan: { x: 0, y: 0 },
+    }));
+  }, []);
 
   // Gallery scroll refs
   const desktopGalleryRef = useRef<HTMLDivElement | null>(null);
@@ -107,6 +172,8 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
   const [addButtonState, setAddButtonState] = useState<AddButtonState>("idle");
   const [stockLoading, setStockLoading] = useState(false);
   const [stockError, setStockError] = useState<string | null>(null);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
+  const [arePromotionsExpanded, setArePromotionsExpanded] = useState(false);
   const buttonStateTimerRef = useRef<number | null>(null);
   const addButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -126,9 +193,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
-      setLoading(true);
-      setError(null);
-      setNotFound(false);
+      setProductPage((current) => ({ ...current, loading: true, error: null, notFound: false }));
       setSelectedColorIndex(0);
       setSelectedSize(null);
       setActiveImageIndex(0);
@@ -143,19 +208,22 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
             if (index >= 0) nextColorIndex = index;
           }
           setSelectedColorIndex(nextColorIndex);
-          setData(res);
+          setProductPage((current) => ({ ...current, data: res }));
           setSelectedQuantity(1);
         })
         .catch((err) => {
           if (cancelled) return;
           if (err instanceof Error && err.message.includes("404")) {
-            setNotFound(true);
+            setProductPage((current) => ({ ...current, notFound: true }));
           } else {
-            setError(err instanceof Error ? err.message : "Error al cargar producto");
+            setProductPage((current) => ({
+              ...current,
+              error: err instanceof Error ? err.message : "Error al cargar producto",
+            }));
           }
         })
         .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!cancelled) setProductPage((current) => ({ ...current, loading: false }));
         });
     });
 
@@ -169,11 +237,12 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
   const currentColorId = currentColor?.color.idColor;
 
   const applyStockToColor = useCallback((stock: ProductoColorStockResponse) => {
-    setData((prev) =>
-      prev
+    setProductPage((current) => ({
+      ...current,
+      data: current.data
         ? {
-            ...prev,
-            colores: prev.colores.map((color) =>
+            ...current.data,
+            colores: current.data.colores.map((color) =>
               color.color.idColor === stock.color.idColor
                 ? {
                     ...color,
@@ -184,8 +253,8 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
                 : color,
             ),
           }
-        : prev,
-    );
+        : current.data,
+    }));
   }, []);
 
   useEffect(() => {
@@ -292,8 +361,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
         setSelectedQuantity(1);
       }
       setActiveImageIndex(nextImage.imageIndex);
-      setViewerImageUrl(nextUrl);
-      setViewerSubtitle(nextImage.colorName);
+      updateViewer({ imageUrl: nextUrl, subtitle: nextImage.colorName });
       const galleryKey = getGalleryKey(nextImage.idColor, nextImage.imageIndex);
       desktopGalleryItemRefs.current[galleryKey]?.scrollIntoView({
         behavior: "smooth",
@@ -306,7 +374,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
         inline: "center",
       });
     },
-    [allImages, selectedColorIndex],
+    [allImages, selectedColorIndex, updateViewer],
   );
 
   const variants: VarianteProducto[] = currentColor?.variantes
@@ -480,26 +548,22 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
 
   // Zoom handlers
   const showPreviousImage = useCallback(() => {
-    setIsDetailZoomed(false);
-    setIsDraggingZoomedImage(false);
-    setZoomPan({ x: 0, y: 0 });
+    resetViewerZoom();
     if (viewerMode !== "gallery") return;
     if (allImages.length <= 1) return;
     const nextIndex =
       activeGalleryIndex <= 0 ? allImages.length - 1 : activeGalleryIndex - 1;
     setActiveGalleryImage(nextIndex);
-  }, [activeGalleryIndex, allImages.length, setActiveGalleryImage, viewerMode]);
+  }, [activeGalleryIndex, allImages.length, resetViewerZoom, setActiveGalleryImage, viewerMode]);
 
   const showNextImage = useCallback(() => {
-    setIsDetailZoomed(false);
-    setIsDraggingZoomedImage(false);
-    setZoomPan({ x: 0, y: 0 });
+    resetViewerZoom();
     if (viewerMode !== "gallery") return;
     if (allImages.length <= 1) return;
     const nextIndex =
       activeGalleryIndex >= allImages.length - 1 ? 0 : activeGalleryIndex + 1;
     setActiveGalleryImage(nextIndex);
-  }, [activeGalleryIndex, allImages.length, setActiveGalleryImage, viewerMode]);
+  }, [activeGalleryIndex, allImages.length, resetViewerZoom, setActiveGalleryImage, viewerMode]);
 
   const getZoomStyle = (sourceElement: HTMLElement | null): CSSProperties => {
     const frame = sourceElement;
@@ -540,29 +604,26 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
   ) => {
     if (!imageUrl) return;
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    setViewerImageUrl(imageUrl);
-    setViewerSubtitle(subtitle);
-    setViewerMode(mode);
-    setZoomStyle(mode === "size-guide" ? {} : getZoomStyle(sourceElement));
-    setIsDetailZoomed(false);
-    setIsDraggingZoomedImage(false);
-    setZoomPan({ x: 0, y: 0 });
-    setViewerPhase("opening");
-    setIsViewerMounted(true);
+    setViewer({
+      isMounted: true,
+      phase: "opening",
+      imageUrl,
+      subtitle,
+      mode,
+      zoomStyle: mode === "size-guide" ? {} : getZoomStyle(sourceElement),
+      isZoomed: false,
+      isDragging: false,
+      pan: { x: 0, y: 0 },
+    });
   };
 
   const closeViewer = useCallback(() => {
-    setViewerPhase("closing");
+    updateViewer({ phase: "closing" });
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     closeTimerRef.current = window.setTimeout(() => {
-      setIsViewerMounted(false);
-      setViewerImageUrl(null);
-      setViewerPhase("opening");
-      setIsDetailZoomed(false);
-      setIsDraggingZoomedImage(false);
-      setZoomPan({ x: 0, y: 0 });
+      setViewer(initialViewerState);
     }, 340);
-  }, []);
+  }, [updateViewer]);
 
   const handleGalleryButtonClick = (
     event: MouseEvent<HTMLButtonElement>,
@@ -583,11 +644,10 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
       return;
     }
     if (isDetailZoomed) {
-      setIsDetailZoomed(false);
-      setZoomPan({ x: 0, y: 0 });
+      updateViewer({ isZoomed: false, pan: { x: 0, y: 0 } });
       return;
     }
-    setIsDetailZoomed(true);
+    updateViewer({ isZoomed: true });
   };
 
   const handleZoomImagePointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -601,7 +661,7 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
       panY: zoomPan.y,
     };
     dragMovedRef.current = false;
-    setIsDraggingZoomedImage(true);
+    updateViewer({ isDragging: true });
   };
 
   const handleZoomImagePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -618,31 +678,34 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
       event.clientY - dragStartRef.current.pointerY,
     );
     if (movedDistance > 4) dragMovedRef.current = true;
-    setZoomPan({
-      x: Math.max(-380, Math.min(380, nextX)),
-      y: Math.max(-380, Math.min(380, nextY)),
+    updateViewer({
+      pan: {
+        x: Math.max(-380, Math.min(380, nextX)),
+        y: Math.max(-380, Math.min(380, nextY)),
+      },
     });
   };
 
   const handleZoomImagePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (isDetailZoomed) event.currentTarget.releasePointerCapture(event.pointerId);
-    setIsDraggingZoomedImage(false);
+    updateViewer({ isDragging: false });
   };
+
+  const handleViewerKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === "Escape") closeViewer();
+    if (viewerMode === "gallery" && event.key === "ArrowLeft") showPreviousImage();
+    if (viewerMode === "gallery" && event.key === "ArrowRight") showNextImage();
+  });
 
   useEffect(() => {
     if (!isViewerMounted) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeViewer();
-      if (viewerMode === "gallery" && event.key === "ArrowLeft") showPreviousImage();
-      if (viewerMode === "gallery" && event.key === "ArrowRight") showNextImage();
-    };
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleViewerKeyDown);
     return () => {
       document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleViewerKeyDown);
     };
-  }, [closeViewer, isViewerMounted, showNextImage, showPreviousImage, viewerMode]);
+  }, [isViewerMounted]);
 
   useEffect(() => {
     return () => {
@@ -771,6 +834,8 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
   if (!data || !currentColor) return null;
 
   const descripcionProducto = data.producto.descripcion?.trim();
+  const visibleCombos = otherCombos.slice(0, 2);
+  const hiddenCombos = otherCombos.slice(2);
 
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#171717] sm:px-10 lg:px-16 xl:px-24">
@@ -1184,12 +1249,27 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
 
           {descripcionProducto && (
             <div className="animate-product-enter mt-5 bg-white" style={{ animationDelay: "380ms" }}>
-              <button type="button" className="flex w-full items-center justify-between border-b border-black/10 px-3 py-2 text-left text-sm font-light">
+              <button
+                type="button"
+                aria-expanded={isDescriptionOpen}
+                onClick={() => setIsDescriptionOpen((open) => !open)}
+                className="flex w-full items-center justify-between border-b border-black/10 px-3 py-2 text-left text-sm font-light"
+              >
                 Descripción
-                <CaretUp size={14} weight="light" />
+                <CaretUp
+                  size={14}
+                  weight="light"
+                  className={`transition-transform duration-300 ${isDescriptionOpen ? "rotate-0" : "rotate-180"}`}
+                />
               </button>
-              <div className="px-8 py-4 text-xs font-light leading-6 text-black/75">
-                {descripcionProducto}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isDescriptionOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="px-8 py-4 text-xs font-light leading-6 text-black/75">
+                  {descripcionProducto}
+                </div>
               </div>
             </div>
           )}
@@ -1199,17 +1279,37 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
                 Producto en promoci&oacute;n:
               </div>
               <div className="space-y-3 px-8 py-4 text-xs font-light leading-6 text-black/75">
-                {otherCombos.map((combo) => (
-                  <div key={combo.idPromocionCombo} className="flex items-start gap-2">
-                    <Tag size={15} weight="regular" className="mt-1 shrink-0 text-emerald-700" />
-                    <div className="min-w-0">
-                      <p className="font-medium uppercase tracking-[0.04em] text-black">
-                        Promocion {combo.regla}
-                      </p>
-                      <p className="text-emerald-700">Precio combo S/ {combo.precioCombo.toFixed(2)}</p>
-                    </div>
-                  </div>
+                {visibleCombos.map((combo) => (
+                  <PromotionComboRow key={combo.idPromocionCombo} combo={combo} />
                 ))}
+                {hiddenCombos.length > 0 && (
+                  <>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        arePromotionsExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <div className="space-y-3 pt-3">
+                        {hiddenCombos.map((combo) => (
+                          <PromotionComboRow key={combo.idPromocionCombo} combo={combo} />
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-expanded={arePromotionsExpanded}
+                      onClick={() => setArePromotionsExpanded((expanded) => !expanded)}
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.08em] text-black/55 transition-colors hover:text-black"
+                    >
+                      {arePromotionsExpanded ? "Ver menos" : `Ver ${hiddenCombos.length} mas`}
+                      <CaretDown
+                        size={13}
+                        weight="bold"
+                        className={`transition-transform duration-300 ${arePromotionsExpanded ? "rotate-180" : "rotate-0"}`}
+                      />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}

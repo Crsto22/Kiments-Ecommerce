@@ -331,7 +331,7 @@ function ProductosView({
 
   return (
     <main className="min-h-screen bg-[#f7f1f3] px-6 pb-20 pt-24 text-[#252525] sm:px-10 lg:px-16 xl:px-24">
-      <h1 className="sr-only">Ropa para mujer KIMENTS</h1>
+      <h1 className="sr-only">Conjuntos sastre para mujer KIMENTS</h1>
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[240px_1fr]">
         {/* Desktop sidebar filters */}
         <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">

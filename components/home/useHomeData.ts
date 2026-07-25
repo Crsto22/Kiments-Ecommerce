@@ -2,19 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { fetchInicio } from "@/lib/api";
-import type { EcommerceInicioCombo, EcommerceInicioImagenProducto, EcommercePortada, ProductoItem } from "@/types/producto";
+import type { EcommerceInicioCombo, EcommerceInicioImagenProducto, EcommerceInicioResponse, EcommercePortada, ProductoItem } from "@/types/producto";
 
-export function useHomeData() {
-  const [aleatorios, setAleatorios] = useState<ProductoItem[]>([]);
-  const [combos, setCombos] = useState<EcommerceInicioCombo[]>([]);
-  const [masVendidos, setMasVendidos] = useState<ProductoItem[]>([]);
-  const [portadas, setPortadas] = useState<EcommercePortada[]>([]);
-  const [imagenesProductos, setImagenesProductos] = useState<EcommerceInicioImagenProducto[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useHomeData(initialData: EcommerceInicioResponse | null) {
+  const [aleatorios, setAleatorios] = useState<ProductoItem[]>(() => initialData?.aleatorios ?? []);
+  const [combos, setCombos] = useState<EcommerceInicioCombo[]>(() => initialData?.combos ?? []);
+  const [masVendidos, setMasVendidos] = useState<ProductoItem[]>(() => initialData?.masVendidos ?? []);
+  const [portadas, setPortadas] = useState<EcommercePortada[]>(() => initialData?.portadas ?? []);
+  const [imagenesProductos, setImagenesProductos] = useState<EcommerceInicioImagenProducto[]>(() => initialData?.imagenesProductos ?? []);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [tiendaConfigurada, setTiendaConfigurada] = useState(true);
+  const [tiendaConfigurada, setTiendaConfigurada] = useState(initialData?.tiendaConfigurada ?? true);
 
   useEffect(() => {
+    if (initialData) return;
     fetchInicio()
       .then((res) => {
         setTiendaConfigurada(res.tiendaConfigurada);
@@ -26,7 +27,7 @@ export function useHomeData() {
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   return {
     aleatorios,

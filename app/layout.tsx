@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { PageLoader } from "@/components/PageLoader";
 import { Navbar } from "@/components/Navbar";
 import { CartProvider } from "@/components/CartProvider";
+import { CookieNotice } from "@/components/CookieNotice";
 import { PwaRegister } from "@/components/PwaRegister";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import "./globals.css";
@@ -52,14 +53,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "KIMENTS",
   title: {
-    default: "KIMENTS | Ropa para mujer en Peru",
+    default: "KIMENTS",
     template: "%s | KIMENTS",
   },
-  description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
+  description: "Tienda oficial KIMENTS. Compra conjuntos sastre para mujer online con envios a todo el Peru.",
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "KIMENTS | Ropa para mujer en Peru",
-    description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
+    title: "KIMENTS",
+    description: "Tienda oficial KIMENTS. Compra conjuntos sastre para mujer online con envios a todo el Peru.",
     siteName: "KIMENTS",
     locale: "es_PE",
     type: "website",
@@ -74,8 +75,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KIMENTS | Ropa para mujer en Peru",
-    description: "Tienda oficial KIMENTS. Compra ropa para mujer online con envios a todo el Peru.",
+    title: "KIMENTS",
+    description: "Tienda oficial KIMENTS. Compra conjuntos sastre para mujer online con envios a todo el Peru.",
     images: [`${siteUrl}/img/pwa/logo_pwa.png`],
   },
   robots: {
@@ -133,6 +134,7 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Footer />
+          <CookieNotice />
         </CartProvider>
       </body>
     </html>

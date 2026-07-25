@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+  width="512" height="512" viewBox="0 0 512 512"
+  role="img" aria-labelledby="title desc">
+  <title id="title">Terno sastre femenino mangas más cortas — fill</title>
+  <desc id="desc">Icono sólido limpio de un blazer femenino con mangas a la altura del terno.</desc>
+  <path d="M256 232 L194 48 C188 42 180 43 174 48 L130 74 C116 82 108 96 107 114 L98 262 C96 286 89 306 80 328 L62 380 C56 396 66 408 82 408 L98 408 C110 408 120 401 125 390 L150 326 C160 300 166 273 167 244 L170 196 L180 300 C183 323 176 352 164 382 C158 396 168 408 184 408 L214 408 C234 408 246 396 252 378 L256 352 L260 378 C266 396 278 408 298 408 L328 408 C344 408 354 396 348 382 C336 352 329 323 332 300 L342 196 L345 244 C346 273 352 300 362 326 L387 390 C392 401 402 408 414 408 L430 408 C446 408 456 396 450 380 L432 328 C423 306 416 286 414 262 L405 114 C404 96 396 82 382 74 L338 48 C332 43 324 42 318 48 L256 232 Z M274 266 A18 18 0 1 1 238 266 A18 18 0 1 1 274 266 Z"
+    fill="currentColor"
+    fill-rule="evenodd"
+    clip-rule="evenodd"/>
+</svg>

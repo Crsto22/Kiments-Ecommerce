@@ -48,6 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/nosotros`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/preguntas-frecuentes`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteUrl}/terminos-y-condiciones`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteUrl}/politica-de-privacidad`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${siteUrl}/politica-de-cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${siteUrl}/libro-de-reclamaciones`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
