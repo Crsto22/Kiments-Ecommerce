@@ -22,6 +22,22 @@ async function getProduct(slug: string): Promise<ProductoDetalleResponse | null>
   }
 }
 
+async function getEcommerceContacto(): Promise<string | null> {
+  try {
+    const response = await fetch(`${backendUrl}/api/public/ecommerce/contacto`, {
+      next: { revalidate: 300, tags: ["ecommerce:contacto"] },
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as {
+      configurado?: boolean;
+      whatsappNumeroInternacional?: string | null;
+    };
+    return data.configurado ? data.whatsappNumeroInternacional ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getProduct(slug);
@@ -59,7 +75,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductoDetallePage({ params }: Props) {
   const { slug } = await params;
-  const data = await getProduct(slug);
+  const [data, whatsappNumeroInternacional] = await Promise.all([
+    getProduct(slug),
+    getEcommerceContacto(),
+  ]);
   if (!data) notFound();
 
   const variants = data.colores.flatMap((color) => color.variantes);
@@ -101,7 +120,11 @@ export default async function ProductoDetallePage({ params }: Props) {
         }}
       />
       <Suspense fallback={null}>
-        <ProductoDetalleClient initialData={data} />
+        <ProductoDetalleClient
+          initialData={data}
+          productUrl={`${siteUrl}/productos/${slug}`}
+          whatsappNumeroInternacional={whatsappNumeroInternacional}
+        />
       </Suspense>
     </>
   );

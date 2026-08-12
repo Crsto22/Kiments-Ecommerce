@@ -32,6 +32,7 @@ import {
 } from "react";
 import { MAX_CART_QUANTITY_PER_VARIANT, useCart } from "@/components/CartProvider";
 import { ProductCarousel } from "@/components/ProductCarousel";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { fetchProductoBySlug, fetchProductoColorStock, fetchProductoVarianteStock, buildImageUrl } from "@/lib/api";
 import type { ProductoDetalleResponse, ProductoColorStockResponse, ColorDetalle, VarianteProducto, PromocionComboProducto } from "@/types/producto";
 
@@ -95,7 +96,15 @@ function PromotionComboRow({ combo }: Readonly<{ combo: PromocionComboProducto }
   );
 }
 
-export default function ProductoDetallePage({ initialData }: { initialData: ProductoDetalleResponse }) {
+export default function ProductoDetallePage({
+  initialData,
+  productUrl,
+  whatsappNumeroInternacional,
+}: {
+  initialData: ProductoDetalleResponse;
+  productUrl: string;
+  whatsappNumeroInternacional?: string | null;
+}) {
   const params = useParams();
   const slug = params.slug as string;
   const searchParams = useSearchParams();
@@ -419,6 +428,16 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
     : "";
   const sameProductCombo = data?.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
   const otherCombos = data?.promocionesCombo?.filter((promo) => !promo.mismoProducto) ?? [];
+  const whatsappUrl = useMemo(() => {
+    if (!data || !currentColor || !whatsappNumeroInternacional) return null;
+    const details = [
+      `Hola, quiero comprar ${data.producto.nombre}`,
+      `Color: ${currentColor.color.nombre}`,
+      selectedSize ? `Talla: ${selectedSize}` : null,
+      `Producto: ${productUrl}`,
+    ].filter(Boolean);
+    return `https://wa.me/${whatsappNumeroInternacional}?text=${encodeURIComponent(details.join("\n"))}`;
+  }, [data, currentColor, productUrl, selectedSize, whatsappNumeroInternacional]);
 
   const addedCurrentVariant =
     currentVariant?.idProductoVariante === addedVariantId;
@@ -1231,6 +1250,19 @@ export default function ProductoDetallePage({ initialData }: { initialData: Prod
               )}
             </button>
           </div>
+
+          {whatsappUrl ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="animate-product-enter mt-3 flex h-14 w-full max-w-full items-center justify-center gap-2 border border-[#25D366] bg-[#25D366] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#1fb657]"
+              style={{ animationDelay: "320ms" }}
+            >
+              <WhatsAppIcon className="size-5" />
+              Comprar por WhatsApp
+            </a>
+          ) : null}
 
           <div className="animate-product-enter mt-5 space-y-3 border-y border-black/10 py-4 text-[13px] font-light text-black" style={{ animationDelay: "340ms" }}>
             <div className="flex items-center gap-3">

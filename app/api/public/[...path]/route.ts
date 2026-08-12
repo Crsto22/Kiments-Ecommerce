@@ -7,6 +7,7 @@ const CACHE_TTL = {
   inicio: 300,
   productos: 300,
   promociones: 300,
+  contacto: 300,
   productoDetalle: 300,
   stock: 10,
   busqueda: 60,
@@ -16,6 +17,7 @@ const CACHE_TAGS = {
   inicio: "ecommerce:inicio",
   productos: "ecommerce:productos",
   promociones: "ecommerce:promociones",
+  contacto: "ecommerce:contacto",
   detalle: "ecommerce:detalle",
   stock: "ecommerce:stock",
 } as const;
@@ -42,6 +44,9 @@ function resolveCachePolicy(
   }
   if (pathname === "ecommerce/promociones") {
     return { ttl: CACHE_TTL.promociones, tags: [CACHE_TAGS.promociones] };
+  }
+  if (pathname === "ecommerce/contacto") {
+    return { ttl: CACHE_TTL.contacto, tags: [CACHE_TAGS.contacto] };
   }
   if (
     /^ecommerce\/productos\/[^/]+\/colores\/[^/]+\/stock$/.test(pathname)

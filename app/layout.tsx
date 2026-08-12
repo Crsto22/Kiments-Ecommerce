@@ -9,6 +9,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { CookieNotice } from "@/components/CookieNotice";
 import { PwaRegister } from "@/components/PwaRegister";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -24,7 +25,24 @@ const kiments = localFont({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiments.com.pe";
+const backendUrl = (process.env.SPRING_BOOT_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 const googleAnalyticsId = "G-07111WXD3V";
+
+async function getEcommerceContacto(): Promise<string | null> {
+  try {
+    const response = await fetch(`${backendUrl}/api/public/ecommerce/contacto`, {
+      next: { revalidate: 300, tags: ["ecommerce:contacto"] },
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as {
+      configurado?: boolean;
+      whatsappNumeroInternacional?: string | null;
+    };
+    return data.configurado ? data.whatsappNumeroInternacional ?? null : null;
+  } catch {
+    return null;
+  }
+}
 
 const storeJsonLd = {
   "@context": "https://schema.org",
@@ -98,11 +116,13 @@ export const viewport: Viewport = {
   themeColor: "#111318",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const whatsappNumeroInternacional = await getEcommerceContacto();
+
   return (
     <html
       lang="es"
@@ -134,6 +154,7 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Footer />
+          <WhatsAppFloatingButton numeroInternacional={whatsappNumeroInternacional} />
           <CookieNotice />
         </CartProvider>
       </body>

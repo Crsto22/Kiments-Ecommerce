@@ -1,6 +1,7 @@
-const CACHE_NAME = "kiments-pwa-v2";
-const APP_SHELL = ["/", "/productos", "/promociones", "/img/pwa/logo_pwa.png", "/manifest.webmanifest"];
+const CACHE_NAME = "kiments-pwa-v3";
+const APP_SHELL = ["/img/pwa/logo_pwa.png", "/manifest.webmanifest"];
 const MEDIA_REQUEST = /\.(?:mp4|webm|mov|m4v|mp3|wav|ogg)$/i;
+const STATIC_REQUEST = /(?:^\/_next\/static\/|\/(?:img|ico|iconos|font)\/|\/manifest\.webmanifest$|\/favicon\.ico$|\.(?:css|js|json|png|jpg|jpeg|webp|svg|ico|woff2?|ttf)$)/i;
 
 function canCache(request, response) {
   const url = new URL(request.url);
@@ -8,7 +9,8 @@ function canCache(request, response) {
     response.status === 200 &&
     response.type === "basic" &&
     !request.headers.has("range") &&
-    !MEDIA_REQUEST.test(url.pathname)
+    !MEDIA_REQUEST.test(url.pathname) &&
+    STATIC_REQUEST.test(url.pathname)
   );
 }
 
@@ -43,17 +45,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (canCache(request, response)) {
-            const copy = response.clone();
-            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {}));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
-    );
+    event.respondWith(fetch(request).catch(() => Response.error()));
     return;
   }
 

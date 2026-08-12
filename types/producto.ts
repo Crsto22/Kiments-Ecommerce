@@ -229,6 +229,12 @@ export interface EcommercePromocionesResponse {
   empty: boolean;
 }
 
+export interface EcommerceContactoResponse {
+  configurado: boolean;
+  whatsappCelular: string | null;
+  whatsappNumeroInternacional: string | null;
+}
+
 export interface EcommerceInicioImagenProducto {
   idProducto: number;
   nombre: string;

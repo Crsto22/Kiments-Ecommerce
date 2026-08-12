@@ -5,6 +5,7 @@ const CACHE_TAGS = [
   "ecommerce:inicio",
   "ecommerce:productos",
   "ecommerce:promociones",
+  "ecommerce:contacto",
   "ecommerce:detalle",
   "ecommerce:stock",
 ] as const;

@@ -8,6 +8,7 @@ import type {
   CarritoValidarResponse,
   EcommerceInicioResponse,
   EcommercePromocionesResponse,
+  EcommerceContactoResponse,
 } from "@/types/producto";
 
 const API_BASE_PATH = "/api/public";
@@ -118,6 +119,10 @@ export async function fetchProductoVarianteStock(
 
 export async function fetchInicio(): Promise<EcommerceInicioResponse> {
   return apiFetch<EcommerceInicioResponse>("/ecommerce/inicio");
+}
+
+export async function fetchEcommerceContacto(): Promise<EcommerceContactoResponse> {
+  return apiFetch<EcommerceContactoResponse>("/ecommerce/contacto");
 }
 
 export async function fetchPromociones(
