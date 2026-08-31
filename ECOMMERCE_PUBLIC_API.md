@@ -207,6 +207,31 @@ Si no existe sucursal ecommerce activa, el listado no falla. Devuelve catalogo v
 }
 ```
 
+## GET /api/public/ecommerce/productos-globales
+
+Lista productos publicados agrupados por producto global. Sirve para paginas de catalogo donde cada tarjeta muestra un solo modelo con sus colores internos.
+
+### Query Params
+
+Usa los mismos parametros que `GET /api/public/ecommerce/productos`, pero el default recomendado para catalogo es `size=6`.
+
+### Ejemplo Request
+
+```http
+GET /api/public/ecommerce/productos-globales?page=0&size=6&tallas=XS,S,M&precioMax=150&soloDisponibles=false
+```
+
+### Estructura Response
+
+Cada item de `content` tiene:
+
+- `producto`
+- `precioMinimo`, `precioMaximo`, `estadoStock`, `stockTotal`
+- `promocionesCombo`
+- `colores[]`, donde cada color trae `color`, `imagenPrincipal`, `precioMinimo`, `precioMaximo`, `estadoStock`, `stockTotalColor` y `variantes[]`
+
+Los filtros de talla y precio se aplican sobre variantes reales. Con filtros activos, `colores[]` solo incluye colores que cumplen esos filtros.
+
 ## GET /api/public/ecommerce/productos/{slug}
 
 Muestra el detalle completo de un producto usando su slug publico. Devuelve todos los colores, todas las tallas, todas las imagenes, precios y ofertas del producto, sin filtrar por stock.
@@ -362,16 +387,18 @@ HTTP/1.1 404 Not Found
 
 ## Uso Recomendado En Frontend Ecommerce
 
-1. Cargar listado con `GET /api/public/ecommerce/productos?page=0&size=10`.
-2. Mostrar una tarjeta por cada item de `content`.
-3. Usar `imagenPrincipal.urlThumb || imagenPrincipal.url`.
-4. Mostrar precio:
+1. Cargar catalogo global con `GET /api/public/ecommerce/productos-globales?page=0&size=6`.
+2. Mostrar una tarjeta por cada producto de `content`.
+3. Mostrar hasta 3 colores visibles y `+N` cuando existan mas colores.
+4. Al cambiar color, usar la imagen, precio y tallas del color seleccionado.
+5. Usar `imagenPrincipal.urlThumb || imagenPrincipal.url`.
+6. Mostrar precio:
    - Si `precioMinimo == precioMaximo`, mostrar un solo precio.
    - Si son diferentes, mostrar rango: `S/ precioMinimo - S/ precioMaximo`.
-5. Si `estadoStock = AGOTADO`, mostrar el producto como catalogo sin boton de compra.
-6. Al entrar al detalle, usar `GET /api/public/ecommerce/productos/{slug}` con el slug del producto.
-7. Para seleccionar talla, usar el item de `variantes` dentro del color elegido.
-8. Para comprar o reservar, enviar `idProductoVariante` al flujo futuro de pedido.
+7. Si `estadoStock = AGOTADO`, mostrar el producto como catalogo sin boton de compra.
+8. Al entrar al detalle, usar `/productos/{slug}?color={idColorSeleccionado}`.
+9. Para seleccionar talla, usar el item de `variantes` dentro del color elegido.
+10. Para comprar o reservar, enviar `idProductoVariante` al flujo futuro de pedido.
 
 
 ## Consultas SQL De Validacion
