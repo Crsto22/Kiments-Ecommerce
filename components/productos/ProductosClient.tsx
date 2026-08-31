@@ -25,19 +25,16 @@ import {
   Storefront,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { fetchProductos, buildImageUrl } from "@/lib/api";
-import type { ProductoItem, ProductoListResponse } from "@/types/producto";
+import { fetchProductosGlobales, buildImageUrl } from "@/lib/api";
+import type { ProductoGlobalColorItem, ProductoGlobalItem, ProductoGlobalListResponse } from "@/types/producto";
 
 type ViewMode = "compact" | "normal" | "wide";
 const SIZE_FILTERS = ["XS", "S", "M", "L"];
 const PRICE_LIMIT = 2000;
 
 // Map API item to card format used by the UI
-interface ProductCard {
-  idProducto: number;
+interface ProductColorCard {
   idColor: number;
-  slug: string;
-  name: string;
   priceLabel: string;
   priceMin: number;
   priceMax: number;
@@ -47,11 +44,25 @@ interface ProductCard {
   colorName: string;
   sizes: { label: string; disponible: boolean; stock: number }[];
   estadoStock: string;
-  comboPrecio: number | null;
-  preventa: boolean;
 }
 
-function mapProductoToCard(item: ProductoItem): ProductCard {
+interface ProductCard {
+  idProducto: number;
+  slug: string;
+  name: string;
+  estadoStock: string;
+  comboPrecio: number | null;
+  preventa: boolean;
+  colors: ProductColorCard[];
+}
+
+function priceLabel(priceMin: number, priceMax: number): string {
+  return priceMin === priceMax
+    ? `S/ ${priceMin.toFixed(2)}`
+    : `S/ ${priceMin.toFixed(2)} - S/ ${priceMax.toFixed(2)}`;
+}
+
+function mapColorToCard(item: ProductoGlobalColorItem): ProductColorCard {
   // Sort variants by talla, try numeric then alpha
   const sorted = item.variantes.toSorted((a, b) => {
     const na = Number(a.talla.nombre);
@@ -68,23 +79,12 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
 
   const priceMin = item.precioMinimo;
   const priceMax = item.precioMaximo;
-  const priceLabel =
-    priceMin === priceMax
-      ? `S/ ${priceMin.toFixed(2)}`
-      : `S/ ${priceMin.toFixed(2)} - S/ ${priceMax.toFixed(2)}`;
 
-  const imageUrl =
-    item.imagenPrincipal?.origen === "COLOR"
-      ? buildImageUrl(item.imagenPrincipal.url || item.imagenPrincipal.urlThumb)
-      : null;
-  const combo = item.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
+  const imageUrl = buildImageUrl(item.imagenPrincipal?.url || item.imagenPrincipal?.urlThumb);
 
   return {
-    idProducto: item.producto.idProducto,
     idColor: item.color.idColor,
-    slug: item.producto.slug,
-    name: item.producto.nombre,
-    priceLabel,
+    priceLabel: priceLabel(priceMin, priceMax),
     priceMin,
     priceMax,
     image: imageUrl,
@@ -93,12 +93,24 @@ function mapProductoToCard(item: ProductoItem): ProductCard {
     colorName: item.color.nombre,
     sizes,
     estadoStock: item.estadoStock,
-    comboPrecio: combo?.precioCombo ?? null,
-    preventa: item.producto.preventa === true,
   };
 }
 
-export default function ProductosPage({ initialData }: { initialData: ProductoListResponse | null }) {
+function mapProductoToCard(item: ProductoGlobalItem): ProductCard {
+  const combo = item.promocionesCombo?.find((promo) => promo.mismoProducto) ?? null;
+
+  return {
+    idProducto: item.producto.idProducto,
+    slug: item.producto.slug,
+    name: item.producto.nombre,
+    estadoStock: item.estadoStock,
+    comboPrecio: combo?.precioCombo ?? null,
+    preventa: item.producto.preventa === true,
+    colors: item.colores.map(mapColorToCard),
+  };
+}
+
+export default function ProductosPage({ initialData }: { initialData: ProductoGlobalListResponse | null }) {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(PRICE_LIMIT);
   const [pendingSizes, setPendingSizes] = useState<string[]>([]);
@@ -116,13 +128,13 @@ export default function ProductosPage({ initialData }: { initialData: ProductoLi
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
   const [totalElements, setTotalElements] = useState(initialData?.totalElements ?? 0);
-  const pageSize = 10;
+  const pageSize = 6;
 
   const fetchData = useCallback(async (pageNum: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchProductos({
+      const data = await fetchProductosGlobales({
         page: pageNum,
         size: pageSize,
         tallas: selectedSizes,
@@ -521,95 +533,11 @@ function ProductResults({
           className={`grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-20 sm:gap-y-14 sm:grid-cols-2 ${gridColumns}`}
         >
           {filteredProducts.map((product, index) => (
-            <article
-              key={`${product.idProducto}-${product.idColor}`}
-              className="animate-product-enter"
-              style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-            >
-              <div
-                className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden rounded-md bg-white"
-                style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-              >
-                {product.hasImage ? (
-                  <ProductImage src={product.image!} alt={product.name} />
-                ) : (
-                  <BrandPlaceholder />
-                )}
-                <Link
-                  href={`/productos/${product.slug}?color=${product.idColor}`}
-                  className="absolute inset-0 z-10"
-                  aria-label={`Ver ${product.name}`}
-                />
-                <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
-                  {product.comboPrecio !== null && (
-                    <span className="bg-emerald-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
-                      2 por S/ {product.comboPrecio.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                {product.preventa && (
-                  <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
-                    Preventa
-                  </span>
-                )}
-                {product.estadoStock === "AGOTADO" && (
-                  <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
-                    Agotado
-                  </span>
-                )}
-                {product.estadoStock === "PARCIAL" && (
-                  <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
-                    Pocas unidades
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <Link href={`/productos/${product.slug}`}>
-                  <h2 className="text-sm font-light uppercase leading-tight transition-colors hover:text-black/60">
-                    {product.name}
-                  </h2>
-                </Link>
-
-                {/* Color swatch */}
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="color-tooltip shrink-0">
-                    <span
-                      aria-label={`Color: ${product.colorName}`}
-                      className="block size-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(0,0,0,0.28)]"
-                      style={{ backgroundColor: product.colorHex }}
-                    />
-                    <span className="color-tooltip-bubble">{product.colorName}</span>
-                  </span>
-                  <span className="text-[11px] font-light text-black/50 uppercase">
-                    {product.colorName}
-                  </span>
-                </div>
-
-                {/* Price */}
-                <p className="mt-2 text-sm font-light">{product.priceLabel}</p>
-                {/* Size pills */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {product.sizes.map((size) => (
-                    <span
-                      key={size.label}
-                      className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-light uppercase sm:size-8 sm:text-[10px] ${
-                        size.disponible
-                          ? "border-black/20 text-black/70"
-                          : "border-black/5 text-black/25 line-through"
-                      }`}
-                      title={
-                        size.disponible
-                          ? `${size.stock} en stock`
-                          : "Agotado"
-                      }
-                    >
-                      {size.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </article>
+            <GlobalProductCard
+              key={product.idProducto}
+              product={product}
+              animationDelay={`${Math.min(index, 8) * 50}ms`}
+            />
           ))}
         </div>
 
@@ -661,8 +589,126 @@ function ProductResults({
   );
 }
 
+function GlobalProductCard({
+  animationDelay,
+  product,
+}: Readonly<{
+  animationDelay: string;
+  product: ProductCard;
+}>) {
+  const [selectedColorId, setSelectedColorId] = useState(product.colors[0]?.idColor ?? 0);
+  const selectedColor =
+    product.colors.find((color) => color.idColor === selectedColorId) ??
+    product.colors[0] ??
+    null;
+  const visibleColors = product.colors.slice(0, 3);
+  const hiddenColors = Math.max(product.colors.length - visibleColors.length, 0);
+  const detailHref = selectedColor
+    ? `/productos/${product.slug}?color=${selectedColor.idColor}`
+    : `/productos/${product.slug}`;
+
+  return (
+    <article
+      className="animate-product-enter"
+      style={{ animationDelay }}
+    >
+      <div
+        className="animate-product-image-enter group relative aspect-[3/4] overflow-hidden rounded-md bg-white"
+        style={{ animationDelay }}
+      >
+        {selectedColor?.hasImage ? (
+          <ProductImage src={selectedColor.image!} alt={`${product.name} ${selectedColor.colorName}`} />
+        ) : (
+          <BrandPlaceholder />
+        )}
+        <Link
+          href={detailHref}
+          className="absolute inset-0 z-10"
+          aria-label={`Ver ${product.name}`}
+        />
+        <div className="absolute left-0 top-0 z-20 flex max-w-[70%] flex-col items-start gap-1">
+          {product.comboPrecio !== null && (
+            <span className="bg-emerald-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
+              2 por S/ {product.comboPrecio.toFixed(2)}
+            </span>
+          )}
+        </div>
+        {product.preventa && (
+          <span className="absolute right-0 top-0 z-20 bg-black px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
+            Preventa
+          </span>
+        )}
+        {product.estadoStock === "AGOTADO" && (
+          <span className="absolute bottom-0 left-0 z-20 bg-red-700 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
+            Agotado
+          </span>
+        )}
+        {product.estadoStock === "PARCIAL" && (
+          <span className="absolute bottom-0 left-0 z-20 bg-black/50 px-3 py-1 text-[8px] font-medium uppercase tracking-wider text-white lg:text-[11px]">
+            Pocas unidades
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <Link href={detailHref}>
+          <h2 className="text-sm font-light uppercase leading-tight transition-colors hover:text-black/60">
+            {product.name}
+          </h2>
+        </Link>
+
+        {selectedColor && (
+          <>
+            <p className="mt-2 text-sm font-light">{selectedColor.priceLabel}</p>
+            <div className="mt-3 flex items-center gap-2">
+              {visibleColors.map((color) => {
+                const active = color.idColor === selectedColor.idColor;
+                return (
+                  <span key={color.idColor} className="color-tooltip shrink-0">
+                    <button
+                      type="button"
+                      aria-label={`Elegir color ${color.colorName}`}
+                      onClick={() => setSelectedColorId(color.idColor)}
+                      className={`block size-5 rounded-full border border-white transition-shadow ${
+                        active
+                          ? "shadow-[0_0_0_1.5px_rgba(0,0,0,0.75)]"
+                          : "shadow-[0_0_0_1px_rgba(0,0,0,0.22)] hover:shadow-[0_0_0_1.5px_rgba(0,0,0,0.45)]"
+                      }`}
+                      style={{ backgroundColor: color.colorHex }}
+                    />
+                    <span className="color-tooltip-bubble">{color.colorName}</span>
+                  </span>
+                );
+              })}
+              {hiddenColors > 0 && (
+                <span className="text-xs font-light text-black/55">+{hiddenColors}</span>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {selectedColor.sizes.map((size) => (
+                <span
+                  key={size.label}
+                  className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-light uppercase sm:size-8 sm:text-[10px] ${
+                    size.disponible
+                      ? "border-black/20 text-black/70"
+                      : "border-black/5 text-black/25 line-through"
+                  }`}
+                  title={size.disponible ? `${size.stock} en stock` : "Agotado"}
+                >
+                  {size.label}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function ProductImage({ src, alt }: Readonly<{ src: string; alt: string }>) {
-  const [failed, setFailed] = useState(false);
+  const [imageState, setImageState] = useState({ src, failed: false });
+  const failed = imageState.src === src && imageState.failed;
 
   if (failed) {
     return <BrandPlaceholder />;
@@ -676,7 +722,7 @@ function ProductImage({ src, alt }: Readonly<{ src: string; alt: string }>) {
       unoptimized
       sizes="(min-width: 1280px) 24vw, (min-width: 768px) 34vw, 50vw"
       className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
-      onError={() => setFailed(true)}
+      onError={() => setImageState({ src, failed: true })}
     />
   );
 }

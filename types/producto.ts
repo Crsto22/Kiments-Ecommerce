@@ -100,6 +100,40 @@ export interface ProductoItem {
   promocionesCombo?: PromocionComboProducto[];
 }
 
+export interface ProductoGlobalColorItem {
+  color: Color;
+  imagenPrincipal: ImagenProducto | null;
+  precioMinimo: number;
+  precioMaximo: number;
+  estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
+  stockTotalColor: number;
+  variantes: VarianteProducto[];
+}
+
+export interface ProductoGlobalItem {
+  producto: ProductoInfo;
+  precioMinimo: number;
+  precioMaximo: number;
+  estadoStock: "DISPONIBLE" | "PARCIAL" | "AGOTADO";
+  stockTotal: number;
+  promocionesCombo?: PromocionComboProducto[];
+  colores: ProductoGlobalColorItem[];
+}
+
+export interface ProductoGlobalListResponse {
+  tiendaConfigurada: boolean;
+  message: string | null;
+  content: ProductoGlobalItem[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
 export interface ProductoListResponse {
   tiendaConfigurada: boolean;
   message: string | null;

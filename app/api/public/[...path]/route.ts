@@ -36,7 +36,7 @@ function resolveCachePolicy(
   if (pathname === "ecommerce/inicio") {
     return { ttl: CACHE_TTL.inicio, tags: [CACHE_TAGS.inicio] };
   }
-  if (pathname === "ecommerce/productos") {
+  if (pathname === "ecommerce/productos" || pathname === "ecommerce/productos-globales") {
     return {
       ttl: request.nextUrl.searchParams.has("q") ? CACHE_TTL.busqueda : CACHE_TTL.productos,
       tags: [CACHE_TAGS.productos],

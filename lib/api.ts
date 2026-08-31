@@ -1,6 +1,7 @@
 import type {
   ProductoListParams,
   ProductoListResponse,
+  ProductoGlobalListResponse,
   ProductoDetalleResponse,
   ProductoColorStockResponse,
   VarianteProducto,
@@ -85,6 +86,14 @@ export async function fetchProductos(
   const qs = buildSearchParams(params);
   const endpoint = `/ecommerce/productos${qs ? `?${qs}` : ""}`;
   return apiFetch<ProductoListResponse>(endpoint);
+}
+
+export async function fetchProductosGlobales(
+  params: ProductoListParams = {},
+): Promise<ProductoGlobalListResponse> {
+  const qs = buildSearchParams(params);
+  const endpoint = `/ecommerce/productos-globales${qs ? `?${qs}` : ""}`;
+  return apiFetch<ProductoGlobalListResponse>(endpoint);
 }
 
 export async function fetchProductoBySlug(

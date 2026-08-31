@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ProductosClient from "@/components/productos/ProductosClient";
-import type { ProductoListResponse } from "@/types/producto";
+import type { ProductoGlobalListResponse } from "@/types/producto";
 
 const backendUrl = (process.env.SPRING_BOOT_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   },
 };
 
-async function getInitialProducts(): Promise<ProductoListResponse | null> {
+async function getInitialProducts(): Promise<ProductoGlobalListResponse | null> {
   try {
     const response = await fetch(
-      `${backendUrl}/api/public/ecommerce/productos?page=0&size=10`,
+      `${backendUrl}/api/public/ecommerce/productos-globales?page=0&size=6`,
       { next: { revalidate: 300, tags: ["ecommerce:productos"] } },
     );
-    return response.ok ? (response.json() as Promise<ProductoListResponse>) : null;
+    return response.ok ? (response.json() as Promise<ProductoGlobalListResponse>) : null;
   } catch {
     return null;
   }
