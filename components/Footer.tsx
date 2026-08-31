@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -49,7 +50,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-[#3c3c3b] px-7 pb-8 pt-12 text-white sm:px-10 lg:px-16 xl:px-20">
+    <footer className="bg-[#3c3c3b] px-7 pb-20 sm:pb-8 pt-12 text-white sm:px-10 lg:px-16 xl:px-20">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 md:grid-cols-[1fr_1fr_1fr] md:gap-16 xl:gap-24">
           <div>
@@ -106,8 +107,15 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="mt-16 text-[12px] font-light text-white/75">
-          @ 2026 KIMENTS. Todos los derechos reservados. Diseñado por Nobitex.
+<p className="mt-16 flex flex-wrap items-center justify-center gap-2 text-[10px] font-light text-white/75 sm:text-[12px]">
+          @ 2026 KIMENTS. Todos los derechos reservados. Diseñado por
+          <Image
+            src="/Logo/logopng.png"
+            alt="Logo del diseñador"
+            width={120}
+            height={20}
+            className="h-[20px] w-auto rounded-full bg-white p-1 object-contain sm:h-[24px]"
+          />
         </p>
       </div>
     </footer>
