@@ -107,15 +107,17 @@ export function Footer() {
           </div>
         </div>
 
-<p className="mt-16 flex flex-wrap items-center justify-center gap-2 text-[10px] font-light text-white/75 sm:text-[12px]">
+        <p className="mt-16 flex flex-wrap items-center justify-center gap-2 text-[10px] font-light text-white/75 sm:text-[12px]">
           @ 2026 KIMENTS. Todos los derechos reservados. Diseñado por
-          <Image
-            src="/Logo/logopng.png"
-            alt="Logo del diseñador"
-            width={120}
-            height={20}
-            className="h-[20px] w-auto rounded-full bg-white p-1 object-contain sm:h-[24px]"
-          />
+          <Link href="https://www.nuvex.pe/" aria-label="Nuvex" target="_blank" rel="noreferrer">
+            <Image
+              src="/Logo/logopng.png"
+              alt="Logo del diseñador"
+              width={120}
+              height={20}
+              className="h-[20px] w-auto rounded-full bg-white p-1 object-contain sm:h-[24px]"
+            />
+          </Link>
         </p>
       </div>
     </footer>
