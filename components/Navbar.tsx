@@ -24,7 +24,9 @@ import {
 } from "@/components/ui/drawer";
 import { CartContent } from "@/components/CartContent";
 import { useCart } from "@/components/CartProvider";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { buildImageUrl, fetchProductos } from "@/lib/api";
+import { buildCartWhatsAppUrl, useEcommerceWhatsApp } from "@/lib/whatsapp";
 import type { ProductoItem } from "@/types/producto";
 
 const navItems = [
@@ -445,6 +447,19 @@ function CartDrawer({
   count,
   triggerClassName,
 }: Readonly<{ count: number; triggerClassName: string }>) {
+  const { items, subtotal, total, descuentoPromocion } = useCart();
+  const whatsappNumeroInternacional = useEcommerceWhatsApp();
+  const whatsappUrl =
+    whatsappNumeroInternacional && items.length > 0
+      ? buildCartWhatsAppUrl(
+          whatsappNumeroInternacional,
+          items,
+          subtotal,
+          total,
+          descuentoPromocion,
+        )
+      : null;
+
   return (
     <Drawer direction="right">
       <DrawerTrigger asChild>
@@ -479,6 +494,17 @@ function CartDrawer({
               >
                 Ir a Pagar
               </Link>
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-[52px] w-full items-center justify-center gap-2 bg-[#25D366] text-[13px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#1ebe5b]"
+                >
+                  <WhatsAppIcon className="size-5" />
+                  Comprar por WhatsApp
+                </a>
+              )}
               <DrawerClose asChild>
                 <button
                   type="button"

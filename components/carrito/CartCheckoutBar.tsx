@@ -1,15 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { Tag } from "@phosphor-icons/react";
-import type { CartComboPendiente, CartComboResumen } from "@/components/CartProvider";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { buildCartWhatsAppUrl } from "@/lib/whatsapp";
+import type { CartComboPendiente, CartComboResumen, CartItem } from "@/components/CartProvider";
 
 interface CartCheckoutBarProps {
+  items: CartItem[];
   subtotal: number;
   total: number;
   descuentoPromocion: number;
   combosAplicados?: CartComboResumen[];
   combosPendientes?: CartComboPendiente[];
+  whatsappNumeroInternacional?: string | null;
 }
 
 function pendingComboText(combo: CartComboPendiente) {
@@ -41,14 +46,23 @@ function pendingComboRows(combos: CartComboPendiente[]) {
 }
 
 export function CartCheckoutBar({
+  items,
   subtotal,
   total,
   descuentoPromocion,
   combosAplicados = [],
   combosPendientes = [],
+  whatsappNumeroInternacional,
 }: CartCheckoutBarProps) {
   const discountRows = comboDiscountRows(combosAplicados);
   const pendingRows = pendingComboRows(combosPendientes);
+  const whatsappUrl = useMemo(
+    () =>
+      whatsappNumeroInternacional && items.length > 0
+        ? buildCartWhatsAppUrl(whatsappNumeroInternacional, items, subtotal, total, descuentoPromocion)
+        : null,
+    [whatsappNumeroInternacional, items, subtotal, total, descuentoPromocion],
+  );
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white px-5 py-4 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] sm:px-8">
@@ -92,6 +106,17 @@ export function CartCheckoutBar({
         >
           Ir a Pagar
         </Link>
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-md bg-[#25D366] px-5 text-[13px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#1ebe5b] active:scale-[0.98]"
+          >
+            <WhatsAppIcon className="size-5" />
+            Comprar por WhatsApp
+          </a>
+        )}
       </div>
     </div>
   );

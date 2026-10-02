@@ -122,7 +122,6 @@ export default async function ProductoDetallePage({ params }: Props) {
       <Suspense fallback={null}>
         <ProductoDetalleClient
           initialData={data}
-          productUrl={`${siteUrl}/productos/${slug}`}
           whatsappNumeroInternacional={whatsappNumeroInternacional}
         />
       </Suspense>

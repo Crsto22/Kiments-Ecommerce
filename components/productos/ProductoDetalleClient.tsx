@@ -98,11 +98,9 @@ function PromotionComboRow({ combo }: Readonly<{ combo: PromocionComboProducto }
 
 export default function ProductoDetallePage({
   initialData,
-  productUrl,
   whatsappNumeroInternacional,
 }: {
   initialData: ProductoDetalleResponse;
-  productUrl: string;
   whatsappNumeroInternacional?: string | null;
 }) {
   const params = useParams();
@@ -434,10 +432,10 @@ export default function ProductoDetallePage({
       `Hola, quiero comprar ${data.producto.nombre}`,
       `Color: ${currentColor.color.nombre}`,
       selectedSize ? `Talla: ${selectedSize}` : null,
-      `Producto: ${productUrl}`,
+      `Cantidad: ${selectedQuantity}`,
     ].filter(Boolean);
     return `https://wa.me/${whatsappNumeroInternacional}?text=${encodeURIComponent(details.join("\n"))}`;
-  }, [data, currentColor, productUrl, selectedSize, whatsappNumeroInternacional]);
+  }, [data, currentColor, selectedQuantity, selectedSize, whatsappNumeroInternacional]);
 
   const addedCurrentVariant =
     currentVariant?.idProductoVariante === addedVariantId;
